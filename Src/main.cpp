@@ -170,18 +170,23 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
             if (command & ARG_REG)
             {
                 if (number > 127)
-                    *command_opcode |= (char)0b01000000;
+                    *command_opcode = (char)0xb0;
                 else
-                    *command_opcode |= (char)0b10000000;
+                    *command_opcode = (char)0x70;
             }
             else
             {
-                out_code[(*out_ip)++] = 0x34;
+                *command_opcode = 0x34;
                 out_code[(*out_ip)++] = x86_NEXT_IS_INT;
             }
 
-            memcpy(&out_code[*out_ip], &number, sizeof(int));
-            *out_ip += sizeof(int);
+            if (command & ARG_REG && number < 128)
+                out_code[(*out_ip)++] = (char)number;
+            else
+            {
+                memcpy(&out_code[*out_ip], &number, sizeof(int));
+                *out_ip += sizeof(int);
+            }
         }
         if (command & ARG_REG)
         {
@@ -285,7 +290,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
         int cmd = in_code[in_ip];
 
         #ifdef DEBUG
-            printf("cmd    = %x\n", cmd);
+            printf("cmd    = %0x\n", cmd);
             printf("in_ip  = %zu\n", in_ip);
             printf("out_ip = %zu\n", out_ip);
 
@@ -296,8 +301,8 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
 
             printf("OUT_CODE:\n");
             for (int i = 0; i < out_ip; i++)
-                printf("%x ", out_code[i]);
-            printf("\n");
+                printf("%x ", (unsigned char)out_code[i]);
+            printf("\n\n");
 
         #endif
 
@@ -305,6 +310,10 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
         {
             case CMD_ADD:
             {
+                #ifdef DEBUG
+                    printf("ADD\n\n");
+                #endif
+
                 in_ip++;
                 MakeAddSub(out_code, &out_ip, x86_ADD);
                 break;
@@ -312,6 +321,10 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
 
             case CMD_SUB:
             {
+                #ifdef DEBUG
+                    printf("SUB\n\n");
+                #endif
+                
                 in_ip++;
                 MakeAddSub(out_code, &out_ip, x86_SUB);
                 break;                
@@ -319,6 +332,10 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
 
             case CMD_MUL:
             {  
+                #ifdef DEBUG
+                    printf("MUL\n\n");
+                #endif
+                
                 in_ip++; 
                 MakeMulDiv(out_code, &out_ip, true);
                 break;
@@ -326,6 +343,10 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
 
             case CMD_DIV:
             {
+                #ifdef DEBUG
+                    printf("DIV\n\n");
+                #endif
+                
                 in_ip++;
                 MakeMulDiv(out_code, &out_ip, false);
                 break;
@@ -333,18 +354,31 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
 
             case CMD_HLT:
             {
+                #ifdef DEBUG
+                    printf("HLT\n\n");
+                #endif
+                
+                in_ip++;
                 MakeHlt(out_code, &out_ip);
                 break;
             }
 
             case CMD_PUSH:
             {
+                #ifdef DEBUG
+                    printf("PUSH\n\n");
+                #endif
+                
                 MakePush(out_code, &out_ip, in_code, &in_ip);
                 break;
             }
 
             case CMD_POP:
             {
+                #ifdef DEBUG
+                    printf("POP\n\n");
+                #endif
+                
                 MakePop(out_code, &out_ip, in_code, &in_ip);
                 break;
             }
