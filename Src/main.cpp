@@ -253,12 +253,12 @@ int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
     if (command & ARG_NUM)
     {
         if (command & ARG_REG && number < 128)
-            out_code[(*out_ip)++] = (char)number;                 //Put number in one byte
+            out_code[(*out_ip)++] = (char)number;               //Put number in one byte
         else
         {
             printf("=====\nARG_NUM\n======\n");
             memcpy(&out_code[*out_ip], &number, sizeof(int));   //
-            *out_ip += sizeof(int);                              //Put number in 4 bytes
+            *out_ip += sizeof(int);                             //Put number in 4 bytes
         }
     }
 
@@ -286,7 +286,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
     size_t in_ip  = 0;
     size_t out_ip = 0;
 
-    while (in_ip < in_header->comands_number)
+    while (in_ip < in_header->commands_number)
     {
         int cmd = in_code[in_ip];
 
@@ -431,6 +431,7 @@ void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, int* numbe
 //!\param [in] mod - 2 bits
 //!\param [in] reg - 3 bits
 //!\param [in] rm  - 3 bits
+//![ mod ][ reg ][ rm ]
 //!
 char MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm)
 {
