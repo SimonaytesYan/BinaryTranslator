@@ -16,7 +16,7 @@ enum REGISTERS
 enum CMD_MASKS
 {
     CMD_MASK  = 0xFF,
-    ARG_IMMED = 0x100,  //< command has number argument      flag  
+    ARG_NUM = 0x100,  //< command has number argument      flag  
     ARG_REG   = 0x200,  //< command has register argument    flag 
     ARG_MEM   = 0x400   //< command has memory area argument flag
 };

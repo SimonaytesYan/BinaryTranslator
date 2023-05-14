@@ -43,6 +43,9 @@ enum x86_CMD_ARGUMENTS
     x86_MUL_WITH_REG  = 0xe0,
     x86_DIV_WITH_REG  = 0xf0,
     x86_STD_MODRM_MOD = 0b11,
+    x86_NEXT_IS_INT   = 0x25,
+    x86_POP_MEM       = 0x8f,
+    x86_PUSH_MEM      = 0xff,
 };
 
 enum x86_REGISTERS
@@ -138,16 +141,19 @@ void MakeMulDiv(char* code, size_t* ip, x86_COMMANDS command)
 
 int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
 {
-    char command = in_code[*in_ip++];
+    int           command = 0;
+    int           number  = 0;
+    x86_REGISTERS reg     = x86_AX;
+    ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
+
     if (command & ARG_MEM)
     {
-        out_code[*out_ip++] = 0xff;
+        out_code[*out_ip++] = x86_PUSH_MEM;
         
         char* command_opcode = &out_code[*out_ip++];
 
-        if (command & ARG_IMMED)
+        if (command & ARG_NUM)
         {
-            int number = in_code[*in_ip++];
             if (command & ARG_REG)
             {
                 if (number > 127)
@@ -158,7 +164,7 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
             else
             {
                 out_code[*out_ip++] = 0x34;
-                out_code[*out_ip++] = 0x25;
+                out_code[*out_ip++] = x86_NEXT_IS_INT;
             }
 
             memcpy(&out_code[*out_ip], &out_code[*out_ip], sizeof(int));
@@ -167,28 +173,26 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
         if (command & ARG_REG)
         {
             *command_opcode |= 0b00110000;
-            *command_opcode |= ConvertMyRegInx86Reg((REGISTERS)in_code[*(in_ip)++]);
+            *command_opcode |= reg;
         }
     }
     else if (command & ARG_REG)
     {
-        x86_REGISTERS reg = ConvertMyRegInx86Reg((REGISTERS)in_code[*(in_ip)++]);
         out_code[*out_ip++] = MakePushPopRegOpcode(x86_PUSH, reg);
     }
-    else if (command & ARG_IMMED)
+    else if (command & ARG_NUM)
     {
-        int argument = in_code[*in_ip++];
-        if (argument < 0b10000000)
+        if (number < 128)
         {
             out_code[*out_ip++] = x86_PUSH_N | 0b10;
-            out_code[*out_ip++] = (char)argument;
+            out_code[*out_ip++] = (char)number;               //Put number in one byte
         }
         else
         {
             out_code[*out_ip++] = x86_PUSH_N;
 
-            memcpy(&out_code[*out_ip], &argument, sizeof(int));
-            *out_ip += sizeof(int);
+            memcpy(&out_code[*out_ip], &number, sizeof(int)); //
+            *out_ip += sizeof(int);                             //Put number in 4 bytes
         }
     }
     
@@ -196,10 +200,57 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
 }
 
 
+int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
+{
+    int           command = 0;
+    int           number  = 0;
+    x86_REGISTERS reg     = x86_AX;
+
+    ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
+
+    if (command & ARG_MEM)
+    {
+        out_code[*out_ip++] = x86_POP_MEM;
+
+        if (command & ARG_NUM)
+        {
+            if (command & ARG_REG)
+            {
+                if (number < 128)
+                    out_code[*out_code] = 0x40;
+                else
+                    out_code[*out_code] = 0x80;
+            }
+            else
+            {
+                out_code[*out_code++] = 0x04;
+                out_code[*out_code++] = x86_NEXT_IS_INT;
+            }
+        }
+    }
+    if (command & ARG_REG)
+    {
+        out_code[*out_ip++] |= ConvertMyRegInx86Reg((REGISTERS)in_code[*in_ip++]);
+    }
+    if (command & ARG_NUM)
+    {
+        if (command & ARG_REG && number < 128)
+            out_code[*out_ip++] = (char)number;                 //Put number in one byte
+        else
+        {
+            memcpy(&out_code[*out_ip], &number, sizeof(int));   //
+            out_ip += sizeof(int);                              //Put number in 4 bytes
+        }
+    }
+}
+
 int MakeHlt(char* code, size_t* ip)
 {
-    char   end_program[]   = { (char)0x48, (char)0xC7, (char)0xC0, (char)0x3C, (char)0x00, (char)0x00, 
-                               (char)0x00, (char)0x48, (char)0x31, (char)0xFF, (char)0x0F, (char)0x05 };
+    char end_program[] = { 
+        (char)0x48, (char)0xC7, (char)0xC0, (char)0x3C, (char)0x00, (char)0x00, (char)0x00, //mov rax, 0x3c
+        (char)0x48, (char)0x31, (char)0xFF,                                                 //xor rdi, rdi
+        (char)0x0F, (char)0x05 };                                                           //syscall
+
     size_t end_program_len = 12;
 
     memcpy(&code[*ip], end_program, end_program_len);
@@ -221,24 +272,28 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
         {
             case CMD_ADD:
             {
+                in_ip++;
                 MakeAddSub(out_code, &out_ip, x86_ADD);
                 break;
             }
 
             case CMD_SUB:
             {
+                in_ip++;
                 MakeAddSub(out_code, &out_ip, x86_SUB);
                 break;                
             }
 
             case CMD_MUL:
-            {   
+            {  
+                in_ip++; 
                 MakeMulDiv(out_code, &out_ip, x86_MUL);
                 break;
             }
 
             case CMD_DIV:
             {
+                in_ip++;
                 MakeMulDiv(out_code, &out_ip, x86_DIV);
                 break;
             }
@@ -252,6 +307,12 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
             case CMD_PUSH:
             {
                 MakePush(out_code, &out_ip, in_code, &in_ip);
+                break;
+            }
+
+            case CMD_POP:
+            {
+                MakePop(out_code, &out_ip, in_code, &in_ip);
                 break;
             }
 
@@ -278,6 +339,20 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
         case RDX:
             return x86_DX;
     }
+}
+
+
+//!
+//!Function parse push and pop commands in to command opcode + number(if any) + register(if any)
+//!and move in_ip to the next command
+//!
+void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, int* number, x86_REGISTERS* reg)
+{
+    *command = in_code[*in_ip++];
+    if (*command & ARG_NUM)
+        *number  = in_code[*in_ip++];
+    if (*command & ARG_REG)
+        *reg     = ConvertMyRegInx86Reg((REGISTERS)in_code[*in_ip++]);
 }
 
 //!
