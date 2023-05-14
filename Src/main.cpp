@@ -12,7 +12,7 @@
 
 //==========================================DEFINES===========================================
 
-#define CHECK_DO(condition, true_branch)   \
+#define CHECK(condition, true_branch)   \
     if (condition)                      \
     {                                   \
         true_branch;                    \
@@ -75,17 +75,14 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 
 int main(int argc, char* argv[])
 {
-
-
     char in_bin_filepath[kMaxFilepathSize + 1] = {};
-
-    CHECK_DO(ParseCmdArgs(argc, argv, in_bin_filepath) != 0, return -1;)    
+    CHECK(ParseCmdArgs(argc, argv, in_bin_filepath) != 0, return -1;)    
 
     FILE* in_bin_fp = fopen(in_bin_filepath, "rb");
-    CHECK_DO(in_bin_fp == nullptr, return -1;)
+    CHECK(in_bin_fp == nullptr, return -1;)
 
     MyHeader in_bin_header = {};
-    CHECK_DO(CheckMyHeaderFromFile(&in_bin_header, in_bin_fp) != 0, return -1;);
+    CHECK(CheckMyHeaderFromFile(&in_bin_header, in_bin_fp) != 0, return -1;);
 
     size_t in_file_size = 0;
 
