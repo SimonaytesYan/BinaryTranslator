@@ -42,7 +42,7 @@ struct MyHeader
 {
     int    signature      = -1;
     int    version        = -1;
-    size_t comands_number = -1;
+    size_t comands_number = (size_t)-1;
 };
 
 int  InitMyHeader(MyHeader* header, int comands_number);
