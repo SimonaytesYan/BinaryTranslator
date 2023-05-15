@@ -164,8 +164,13 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     x86_REGISTERS reg     = x86_AX;
     ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
 
+    printf("command = %d\n", command);
+    printf("number  = %d\n", number);
+    printf("reg     = %d\n", reg);
+
     if (command & ARG_MEM)
     {
+        printf("ARG_MEM\n");
         number  += (size_t)ram;
         command |= ARG_NUM;
     }
@@ -211,6 +216,7 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     }
     else if (command & ARG_NUM)
     {
+        printf("push number\n");
         if (number < 128)
         {
             out_code[(*out_ip)++] = x86_PUSH_N | 0b10;
@@ -343,9 +349,12 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
     size_t in_ip  = 0;
     size_t out_ip = 0;
 
+    size_t call_stack_address = (size_t)call_stack;
+
     out_code[out_ip++] = 0x48;                          //Put in rsi call stack pointer
+    out_code[out_ip++] = x86_MOV;                          //Put in rsi call stack pointer
     out_code[out_ip++] = 0xc0 | x86_SI;                 //
-    memcpy(&out_code[out_ip], call_stack, sizeof(int)); //
+    memcpy(&out_code[out_ip], &call_stack_address, sizeof(int)); //
     out_ip += sizeof(int);                              //mov rsi, call_stack
 
     while (in_ip < in_header->commands_number)
@@ -436,6 +445,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
                 #endif
 
                 MakeCall(out_code, &out_ip, in_code, &in_ip);
+                break;
             }
 
             case CMD_RET:
@@ -446,6 +456,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
 
                 in_ip++;
                 MakeReturn(out_code, &out_ip);
+                break;
             }
 
             default:
@@ -453,19 +464,19 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
         }
 
         #ifdef DEBUG
-            printf("cmd    = %0x\n", cmd);
+            printf("cmd    = %b\n", cmd);
 
             printf("in_ip  = %zu\n", in_ip);
             printf("out_ip = %zu\n", out_ip);
 
             printf("IN_CODE:\n");
             for (int i = 0; i < in_ip; i++)
-                printf("%x ", in_code[i]);
+                printf("%X ", in_code[i]);
             printf("\n");
 
             printf("OUT_CODE:\n");
             for (int i = 0; i < out_ip; i++)
-                printf("%x ", (unsigned char)out_code[i]);
+                printf("%X ", (unsigned char)out_code[i]);
             printf("\n\n");
         #endif
     }
