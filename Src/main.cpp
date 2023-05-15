@@ -64,9 +64,10 @@ enum x86_REGISTERS
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
-int  ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath);
-int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char* call_stack);
+int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
 void Run(char* out_code);
+int  GetFileSize(const char *file_name);
+int  ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath);
 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command);
 void MakeMulDiv(char* code, size_t* ip, bool is_mul);
@@ -81,7 +82,7 @@ char          MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm);
 char          MakeMulDivWithRegArg(x86_CMD_ARGUMENTS arg_pref, x86_REGISTERS reg);
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, int* number, x86_REGISTERS* reg);
-int           GetFileSize(const char *file_name);
+void          PutCallStackPointerToRSI(char* code, size_t* ip, char* call_stack);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -106,7 +107,13 @@ int main(int argc, char* argv[])
     char* ram        = (char*)mmap(NULL, RAM_SIZE,        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     char* call_stack = (char*)mmap(NULL, CALL_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-    Translate((int*)((char*)in_code + sizeof(MyHeader)), out_code , &in_bin_header, ram, call_stack);
+    printf("Translating...\n");
+
+    size_t out_ip = 0;
+    PutCallStackPointerToRSI(out_code, &out_ip, call_stack);
+    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[out_ip] , &in_bin_header, ram);
+
+    printf("Running\n");
 
     Run(out_code);
 }
@@ -285,7 +292,7 @@ int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* r
 int MakeReturn(char* out_code, size_t* out_ip)
 {
     out_code[(*out_ip)++] = 0xff;                               //
-    out_code[(*out_ip)++] = 0xe0 | x86_SI;                      //jmp [rsi]
+    out_code[(*out_ip)++] = 0x20 | x86_SI;                      //jmp [rsi]
 
     char inc[] = {(char)0x48, (char)0xff, (char)(0xc8 | x86_SI)}; //
     memcpy(&out_code[*out_ip], inc, 3);                           //
@@ -299,25 +306,26 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
     int label       = in_code[(*in_ip)++] + (size_t)out_code;
     int ret_address = (size_t)&out_code[*out_ip];
 
-    char mov_rsi[] = {(char)0x48, (char)x86_MOV, (char)x86_SI};  //Put in rsi call stack pointer
-    memcpy(&out_code[*out_ip], mov_rsi, 3);                   //
-    *out_ip += 3;                                             //
+    char mov_rsi[] = {(char)0x48, (char)x86_MOV, (char)x86_SI};     //Put in rsi call stack pointer
+    memcpy(&out_code[*out_ip], mov_rsi, 3);                         //
+    *out_ip += 3;                                                   //
 
-    memcpy(&out_code[*out_ip], &ret_address, sizeof(int));//
-    *out_ip += sizeof(int);                                      //mov [rsi], &out_code[out_ip]
+    memcpy(&out_code[*out_ip], &ret_address, sizeof(int));          //
+    *out_ip += sizeof(int);                                         //mov [rsi], &out_code[out_ip]
 
-    char inc[] = {(char)0x48, (char)0xff, (char)(0xc0 | x86_SI)}; //
-    memcpy(&out_code[*out_ip], inc, 3);                           //
-    *out_ip += 3;                                                 //inc rsi
+    //ToDo separate function for inc and dec
+    char inc[] = {(char)0x48, (char)0xff, (char)(0xc0 | x86_SI)};   //
+    memcpy(&out_code[*out_ip], inc, 3);                             //
+    *out_ip += 3;                                                   //inc rsi
 
     char mov[] = {0x48, (char)x86_MOV, (char)(0xc0 | x86_AX)};      //
-    memcpy(&out_code[*out_ip], mov_rsi, 3);                 //
-    *out_ip += 3;                                           //
-    memcpy(&out_code[*out_ip], &label, sizeof(int));        //
-    *out_ip += sizeof(int);                                 //mov rax, label
+    memcpy(&out_code[*out_ip], mov, 3);                             //
+    *out_ip += 3;                                                   //
+    memcpy(&out_code[*out_ip], &label, sizeof(int));                //
+    *out_ip += sizeof(int);                                         //mov rax, label
 
-    out_code[(*out_ip)++] = 0xff;                             //
-    out_code[(*out_ip)++] = 0xe0 | x86_AX;                    //jmp rax
+    out_code[(*out_ip)++] = 0xff;                                   //
+    out_code[(*out_ip)++] = 0xe0 | x86_AX;                          //jmp rax
 
     return 0;
 }
@@ -338,18 +346,10 @@ int MakeHlt(char* code, size_t* ip)
     return 0;
 }
 
-int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char* call_stack)
+int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
 {
     size_t in_ip  = 0;
     size_t out_ip = 0;
-
-    size_t call_stack_address = (size_t)call_stack;
-
-    out_code[out_ip++] = 0x48;                          //Put in rsi call stack pointer
-    out_code[out_ip++] = x86_MOV;                          //Put in rsi call stack pointer
-    out_code[out_ip++] = 0xc0 | x86_SI;                 //
-    memcpy(&out_code[out_ip], &call_stack_address, sizeof(int)); //
-    out_ip += sizeof(int);                              //mov rsi, call_stack
 
     while (in_ip < in_header->commands_number)
     {
@@ -438,6 +438,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
                     printf("CALL\n");
                 #endif
 
+                in_ip++;
                 MakeCall(out_code, &out_ip, in_code, &in_ip);
                 break;
             }
@@ -476,6 +477,21 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char
     }
 
     MakeHlt(out_code, &out_ip);
+
+     #ifdef DEBUG
+        printf("in_ip  = %zu\n", in_ip);
+        printf("out_ip = %zu\n", out_ip);
+
+        printf("IN_CODE:\n");
+        for (int i = 0; i < in_ip; i++)
+            printf("%X ", in_code[i]);
+        printf("\n");
+
+        printf("OUT_CODE:\n");
+        for (int i = 0; i < out_ip; i++)
+            printf("%X ", (unsigned char)out_code[i]);
+        printf("\n\n");
+    #endif
 
     return 0;
 }
@@ -531,6 +547,17 @@ char MakePushPopRegOpcode(x86_COMMANDS command, x86_REGISTERS reg)
 char MakeMulDivWithRegArg(x86_CMD_ARGUMENTS arg_pref, x86_REGISTERS reg)
 {
     return (char)arg_pref | (char)reg;
+}
+
+void PutCallStackPointerToRSI(char* code, size_t* ip, char* call_stack)
+{
+    size_t call_stack_address = (size_t)call_stack;
+
+    code[(*ip)++] = 0x48;                                 //Put in rsi call stack pointer
+    code[(*ip)++] = x86_MOV;                              //
+    code[(*ip)++] = (char)(0xc0 | x86_SI);                //
+    memcpy(&code[*ip], &call_stack_address, sizeof(int)); //
+    *ip += sizeof(int);                                   //mov rsi, call_stack
 }
 
 int ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath)
