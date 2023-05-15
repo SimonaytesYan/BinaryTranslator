@@ -164,13 +164,8 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     x86_REGISTERS reg     = x86_AX;
     ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
 
-    printf("command = %d\n", command);
-    printf("number  = %d\n", number);
-    printf("reg     = %d\n", reg);
-
     if (command & ARG_MEM)
     {
-        printf("ARG_MEM\n");
         number  += (size_t)ram;
         command |= ARG_NUM;
     }
@@ -216,7 +211,6 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     }
     else if (command & ARG_NUM)
     {
-        printf("push number\n");
         if (number < 128)
         {
             out_code[(*out_ip)++] = x86_PUSH_N | 0b10;
