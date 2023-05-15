@@ -39,8 +39,10 @@ enum x86_COMMANDS
     x86_PUSH    = 0x50,
     x86_PUSH_N  = 0x68,
     x86_POP     = 0x58,
-    x86_MOV     = 0xc7,
     x86_MOV_ABS = 0xb8,
+    x86_INC     = 0xc0,
+    x86_DEC     = 0xc8,
+    x86_JMP     = 0xe0,
 };
 
 enum x86_CMD_ARGUMENTS
@@ -55,13 +57,23 @@ enum x86_CMD_ARGUMENTS
 
 enum x86_REGISTERS
 {
-    x86_ERROR_REG = 0b1111,
-    x86_RAX        = 0b000,
-    x86_RBX        = 0b011,
-    x86_RCX        = 0b001,
-    x86_RDX        = 0b010,
-    x86_RSI        = 0b110,
-    x86_RDI        = 0b111,
+    x86_ERROR_REG  = 0b1111,
+
+    x86_RAX = 0b000,        //User register
+    x86_RBX = 0b011,        //User register
+    x86_RCX = 0b001,        //User register
+    x86_RDX = 0b010,        //User register
+
+    x86_RSI = 0b0110,       //System register
+    x86_RDI = 0b0111,       //System register
+    x86_R8  = 0b1000,       //System register
+    x86_R9  = 0b1001,       //System register
+    x86_R10 = 0b1010,       //System register
+    x86_R11 = 0b1011,       //System register
+    x86_R12 = 0b1100,       //System register
+    x86_R13 = 0b1101,       //System register
+    x86_R14 = 0b1110,       //System register
+    x86_R15 = 0b1111,       //System register
 }; 
 
 //==========================================FUNCTION PROTOTYPES===========================================
@@ -79,12 +91,13 @@ int  MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
 int  MakeReturn(char* out_code, size_t* out_ip);
 int  MakeHlt(char* code, size_t* ip);
 
+void          MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
+void          MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command);
+char          MakeMulDivWithRegArg(x86_CMD_ARGUMENTS arg_pref, x86_REGISTERS reg);
 char          MakePushPopRegOpcode(x86_COMMANDS command, x86_REGISTERS reg);
 char          MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm);
-char          MakeMulDivWithRegArg(x86_CMD_ARGUMENTS arg_pref, x86_REGISTERS reg);
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg);
-void          MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -343,8 +356,8 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
 
         if (command & ARG_REG)
         {
-            out_code[(*out_ip)++] = 0xb4;           //
-            out_code[(*out_ip)++] = reg | x86_RDI;  //push [reg + rdi] ([reg + rdi], because rdi - pointer to ram for this program)
+            out_code[(*out_ip)++] = 0xb4;                 //
+            out_code[(*out_ip)++] = reg | x86_RDI << 3;   //push [reg + rdi] ([reg + rdi], because rdi - pointer to ram for this program)
         }
         else if (command & ARG_NUM)
             out_code[(*out_ip)++] = 0xb0 | x86_RDI;
@@ -382,8 +395,8 @@ int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* r
         if (command & ARG_REG)
         {
             out_code[(*out_ip)++] = 0x84;
-            out_code[(*out_ip)]   = x86_RDI; // Dont increment out_ip, because we should make or this byte with register.
-                                             // And program will do it later
+            out_code[(*out_ip)]   = x86_RDI << 3; // Dont increment out_ip, because we should make or this byte with register.
+                                                  // Program will do it later
         }
         else if (command & ARG_NUM)
             out_code[(*out_ip)++] = 0x80 | x86_RDI;
@@ -418,29 +431,20 @@ int MakeReturn(char* out_code, size_t* out_ip)
 
 int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
 {
-    int label       = in_code[(*in_ip)++] + (size_t)out_code;
-    int ret_address = (size_t)&out_code[*out_ip];
+    size_t label       = in_code[(*in_ip)++] + (size_t)out_code;
+    size_t ret_address = (size_t)&out_code[*out_ip];
+    
+    MakeMovAbsInReg(out_code, out_ip, ret_address, x86_R8);                     //movabs r8, ret_address
 
-    char mov_rsi[] = {(char)0x48, (char)x86_MOV, (char)x86_RSI};    //Put in rsi call stack pointer
-    memcpy(&out_code[*out_ip], mov_rsi, 3);                         //
-    *out_ip += 3;                                                   //
+    char mov_rsi[] = {(char)0x4c, (char)0x89, (char)x86_RSI | (char)x86_R8};    //
+    memcpy(&out_code[*out_ip], mov_rsi, 3);                                     //
+    *out_ip += 3;                                                               //mov [rsi], r8    
+    MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);                             //inc rsi
 
-    memcpy(&out_code[*out_ip], &ret_address, sizeof(int));          //
-    *out_ip += sizeof(int);                                         //mov [rsi], &out_code[out_ip]
+    MakeMovAbsInReg(out_code, out_ip, label, x86_RAX);                          //movabs rax, label
 
-    //ToDo separate function for inc and dec
-    char inc[] = {(char)0x48, (char)0xff, (char)(0xc0 | x86_RSI)};  //
-    memcpy(&out_code[*out_ip], inc, 3);                             //
-    *out_ip += 3;                                                   //inc rsi
-
-    char mov[] = {0x48, (char)x86_MOV, (char)(0xc0 | x86_RAX)};     //
-    memcpy(&out_code[*out_ip], mov, 3);                             //
-    *out_ip += 3;                                                   //
-    memcpy(&out_code[*out_ip], &label, sizeof(int));                //
-    *out_ip += sizeof(int);                                         //mov rax, label
-
-    out_code[(*out_ip)++] = 0xff;                                   //
-    out_code[(*out_ip)++] = 0xe0 | x86_RAX;                         //jmp rax
+    out_code[(*out_ip)++] = 0xff;                                               //
+    out_code[(*out_ip)++] = x86_JMP | x86_RAX;                                  //jmp rax
 
     return 0;
 }
@@ -459,6 +463,17 @@ int MakeHlt(char* code, size_t* ip)
     *ip += end_program_len;
 
     return 0;
+}
+
+void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
+{
+    code[(*ip)] = 0x48;
+    if (reg >= x86_R8)
+        code[(*ip)] |= 0b1;
+    *ip++;
+    
+    code[(*ip)++] = 0xff;
+    code[(*ip)++] = command | reg;
 }
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
@@ -516,8 +531,12 @@ char MakeMulDivWithRegArg(x86_CMD_ARGUMENTS arg_pref, x86_REGISTERS reg)
 
 void MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
 {
-    code[(*ip)++] = 0x48;                                   //
-    code[(*ip)++] = x86_MOV_ABS | x86_RSI;                  //
+    code[(*ip)] = 0x48;
+    if (reg >= x86_R8)
+        code[(*ip)] |= 0b1;
+    *ip++;
+    
+    code[(*ip)++] = x86_MOV_ABS | reg;                      //
     memcpy(&code[*ip], &number, sizeof(size_t));            //
     *ip += sizeof(size_t);                                  //mov reg, number
 }
