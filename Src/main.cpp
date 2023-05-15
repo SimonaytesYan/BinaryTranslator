@@ -451,15 +451,14 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
 
 int MakeHlt(char* code, size_t* ip)
 {
-    char end_program[] = { 
-        (char)0x48, (char)0xC7, (char)0xC0, (char)0x3C, (char)0x00, (char)0x00, (char)0x00, //mov rax, 0x3c
+    MakeMovAbsInReg(code, ip, 0x3c, x86_RAX);   //mov rax, 0x3c
+    
+    size_t end_program_len = 5;
+    char end_program[] = {
         (char)0x48, (char)0x31, (char)0xFF,                                                 //xor rdi, rdi
         (char)0x0F, (char)0x05 };                                                           //syscall
 
-    size_t end_program_len = 12;
-
     memcpy(&code[*ip], end_program, end_program_len);
-
     *ip += end_program_len;
 
     return 0;
