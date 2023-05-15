@@ -422,10 +422,7 @@ int MakeReturn(char* out_code, size_t* out_ip)
     out_code[(*out_ip)++] = 0xff;                                   //
     out_code[(*out_ip)++] = 0x20 | x86_RSI;                         //jmp [rsi]
 
-    char inc[] = {(char)0x48, (char)0xff, (char)(0xc8 | x86_RSI)};  //
-    memcpy(&out_code[*out_ip], inc, 3);                             //
-    *out_ip += 3;                                                   //dec rsi
-
+    MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);
     return 0;
 }
 
@@ -462,17 +459,6 @@ int MakeHlt(char* code, size_t* ip)
     *ip += end_program_len;
 
     return 0;
-}
-
-void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
-{
-    code[(*ip)] = 0x48;
-    if (reg >= x86_R8)
-        code[(*ip)] |= 0b1;
-    *ip++;
-    
-    code[(*ip)++] = 0xff;
-    code[(*ip)++] = command | reg;
 }
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
@@ -532,12 +518,29 @@ void MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
 {
     code[(*ip)] = 0x48;
     if (reg >= x86_R8)
+    {
         code[(*ip)] |= 0b1;
+        reg = (x86_REGISTERS)(reg & 0b111);
+    }
     *ip++;
     
     code[(*ip)++] = x86_MOV_ABS | reg;                      //
     memcpy(&code[*ip], &number, sizeof(size_t));            //
     *ip += sizeof(size_t);                                  //mov reg, number
+}
+
+void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
+{
+    code[(*ip)] = 0x48;
+    if (reg >= x86_R8)
+    {
+        code[(*ip)] |= 0b1;
+        reg = (x86_REGISTERS)(reg & 0b111);
+    }
+    *ip++;
+    
+    code[(*ip)++] = 0xff;
+    code[(*ip)++] = command | reg;
 }
 
 int ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath)
