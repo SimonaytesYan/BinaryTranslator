@@ -15,19 +15,20 @@ enum REGISTERS
 
 enum CMD_MASKS
 {
-    CMD_MASK  = 0xFF,
-    ARG_NUM = 0x100,  //< command has number argument      flag  
-    ARG_REG   = 0x200,  //< command has register argument    flag 
-    ARG_MEM   = 0x400   //< command has memory area argument flag
+    CMD_MASK = 0xFF,
+    ARG_NUM  = 0x100,  //< command has number argument      flag  
+    ARG_REG  = 0x200,  //< command has register argument    flag 
+    ARG_MEM  = 0x400   //< command has memory area argument flag
 };
 
 const int SIGNATURE   = 'S' * 256 + 'Y';
 const int ASM_VERSION = 3;
 
-const int RAM_SIZE     = 230400;
-const int FI_BYTE      = 0xFF;
-const int WINDOW_HIGHT = 360;
-const int WINDOW_WIDTH = 636;
+const int RAM_SIZE        = 230400;
+const int CALL_STACK_SIZE = 1024;
+const int FI_BYTE         = 0xFF;
+const int WINDOW_HIGHT    = 360;
+const int WINDOW_WIDTH    = 636;
 
 const int MAX_LABELS    = 64;
 const int MAX_LABEL_LEN = 20;

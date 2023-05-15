@@ -39,6 +39,7 @@ enum x86_COMMANDS
     x86_PUSH   = 0x50,
     x86_PUSH_N = 0x68,
     x86_POP    = 0x58,
+    x86_MOV    = 0xc7,
 };
 
 enum x86_CMD_ARGUMENTS
@@ -58,18 +59,21 @@ enum x86_REGISTERS
     x86_BX        = 0b011,
     x86_CX        = 0b001,
     x86_DX        = 0b010,
+    x86_SI        = 0b110,
 }; 
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
 int  ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath);
-int  Translate(int* in_code, char* out_code, MyHeader* in_header);
+int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char* call_stack);
 void Run(char* out_code);
 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command);
 void MakeMulDiv(char* code, size_t* ip, bool is_mul);
-int  MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
-int  MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
+int  MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
+int  MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
+int  MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
+int  MakeReturn(char* out_code, size_t* out_ip);
 int  MakeHlt(char* code, size_t* ip);
 
 char          MakePushPopRegOpcode(x86_COMMANDS command, x86_REGISTERS reg);
@@ -96,10 +100,13 @@ int main(int argc, char* argv[])
 
     int in_bin_fd = open(in_bin_filepath, O_RDWR);
     
-    char* out_code = (char*)mmap(NULL, 4096,         PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1,        0);
-    int*  in_code  = (int*) mmap(NULL, in_file_size, PROT_READ,              MAP_PRIVATE,                 in_bin_fd, 0);
+    char* out_code   = (char*)mmap(NULL, 4096,         PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE, -1,        0);
+    int*  in_code    = (int*) mmap(NULL, in_file_size, PROT_READ,              MAP_PRIVATE,                 in_bin_fd, 0);
 
-    Translate((int*)((char*)in_code + sizeof(MyHeader)), out_code , &in_bin_header);
+    char* ram        = (char*)mmap(NULL, RAM_SIZE,        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    char* call_stack = (char*)mmap(NULL, CALL_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+    Translate((int*)((char*)in_code + sizeof(MyHeader)), out_code , &in_bin_header, ram, call_stack);
 
     Run(out_code);
 }
@@ -150,12 +157,18 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
     code[(*ip)++] = MakePushPopRegOpcode(x86_PUSH, x86_AX);        //push rax
 }
 
-int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
+int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
 {
     int           command = 0;
     int           number  = 0;
     x86_REGISTERS reg     = x86_AX;
     ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
+
+    if (command & ARG_MEM)
+    {
+        number  += (size_t)ram;
+        command |= ARG_NUM;
+    }
 
     if (command & ARG_MEM)
     {
@@ -215,12 +228,17 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
     return 0;
 }
 
-
-int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
+int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
 {
     int           command = 0;
     int           number  = 0;
     x86_REGISTERS reg     = x86_AX;
+
+    if (command & ARG_MEM)
+    {
+        number  += (size_t)ram;
+        command |= ARG_NUM;
+    }
 
     ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
 
@@ -256,11 +274,50 @@ int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
             out_code[(*out_ip)++] = (char)number;               //Put number in one byte
         else
         {
-            printf("=====\nARG_NUM\n======\n");
             memcpy(&out_code[*out_ip], &number, sizeof(int));   //
             *out_ip += sizeof(int);                             //Put number in 4 bytes
         }
     }
+
+    return 0;
+}
+
+int MakeReturn(char* out_code, size_t* out_ip)
+{
+    out_code[(*out_ip)++] = 0xff;                               //
+    out_code[(*out_ip)++] = 0xe0 | x86_SI;                      //jmp [rsi]
+
+    char inc[] = {(char)0x48, (char)0xff, (char)(0xc8 | x86_SI)}; //
+    memcpy(&out_code[*out_ip], inc, 3);                           //
+    *out_ip += 3;                                                 //dec rsi
+
+    return 0;
+}
+
+int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
+{
+    int label       = in_code[(*in_ip)++] + (size_t)out_code;
+    int ret_address = (size_t)&out_code[*out_ip];
+
+    char mov_rsi[] = {(char)0x48, (char)x86_MOV, (char)x86_SI};  //Put in rsi call stack pointer
+    memcpy(&out_code[*out_ip], mov_rsi, 3);                   //
+    *out_ip += 3;                                             //
+
+    memcpy(&out_code[*out_ip], &ret_address, sizeof(int));//
+    *out_ip += sizeof(int);                                      //mov [rsi], &out_code[out_ip]
+
+    char inc[] = {(char)0x48, (char)0xff, (char)(0xc0 | x86_SI)}; //
+    memcpy(&out_code[*out_ip], inc, 3);                           //
+    *out_ip += 3;                                                 //inc rsi
+
+    char mov[] = {0x48, (char)x86_MOV, (char)(0xc0 | x86_AX)};      //
+    memcpy(&out_code[*out_ip], mov_rsi, 3);                 //
+    *out_ip += 3;                                           //
+    memcpy(&out_code[*out_ip], &label, sizeof(int));        //
+    *out_ip += sizeof(int);                                 //mov rax, label
+
+    out_code[(*out_ip)++] = 0xff;                             //
+    out_code[(*out_ip)++] = 0xe0 | x86_AX;                    //jmp rax
 
     return 0;
 }
@@ -281,10 +338,15 @@ int MakeHlt(char* code, size_t* ip)
     return 0;
 }
 
-int Translate(int* in_code, char* out_code, MyHeader* in_header)
+int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, char* call_stack)
 {
     size_t in_ip  = 0;
     size_t out_ip = 0;
+
+    out_code[out_ip++] = 0x48;                          //Put in rsi call stack pointer
+    out_code[out_ip++] = 0xc0 | x86_SI;                 //
+    memcpy(&out_code[out_ip], call_stack, sizeof(int)); //
+    out_ip += sizeof(int);                              //mov rsi, call_stack
 
     while (in_ip < in_header->commands_number)
     {
@@ -353,7 +415,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
                     printf("PUSH\n");
                 #endif
                 
-                MakePush(out_code, &out_ip, in_code, &in_ip);
+                MakePush(out_code, &out_ip, in_code, &in_ip, ram);
                 break;
             }
 
@@ -363,8 +425,27 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header)
                     printf("POP\n");
                 #endif
                 
-                MakePop(out_code, &out_ip, in_code, &in_ip);
+                MakePop(out_code, &out_ip, in_code, &in_ip, ram);
                 break;
+            }
+
+            case CMD_CALL:
+            {
+                #ifdef DEBUG
+                    printf("CALL\n");
+                #endif
+
+                MakeCall(out_code, &out_ip, in_code, &in_ip);
+            }
+
+            case CMD_RET:
+            {
+                #ifdef DEBUG
+                    printf("RET\n");
+                #endif
+
+                in_ip++;
+                MakeReturn(out_code, &out_ip);
             }
 
             default:
@@ -412,7 +493,6 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
 
     return x86_ERROR_REG;
 }
-
 
 //!
 //!Function parse push and pop commands in to command opcode + number(if any) + register(if any)
