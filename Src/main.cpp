@@ -98,6 +98,9 @@ void          MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS
 void          MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg);
 void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg);
 void          PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2);
+void          PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg);
+void          MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from);
+
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
 int main(int argc, char* argv[])
@@ -327,41 +330,6 @@ void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
     MakePushPopReg(code, ip, x86_PUSH, x86_R8);  //push r8
 }
 
-void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
-{
-    code[(*ip)] = 0x48;
-    if (*reg >= x86_R8)
-    {
-        code[(*ip)] |= 0b1;
-        *reg = (x86_REGISTERS)(*reg & 0b111);
-    }
-    (*ip)++;
-}
-
-void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
-{
-    code[(*ip)] = 0x48;
-    if (*reg1 >= x86_R8)
-    {
-        code[(*ip)] |= 0b1;
-        *reg1 = (x86_REGISTERS)(*reg1 & 0b111);
-    }
-    if (*reg2 >= x86_R8)
-    {
-        code[(*ip)] |= 0b100;
-        *reg2 = (x86_REGISTERS)(*reg2 & 0b111);        
-    }
-    (*ip)++;
-}
-
-void MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
-{
-    PutPrefixForTwoReg(code, ip, &reg_to, &reg_from);
-
-    code[(*ip)++] = x86_MOV;
-    code[(*ip)++] = 0xc0 | reg_to | (reg_from << 3);
-}
-
 //!
 //!is_mul = true  if mul
 //!       = false if div
@@ -371,7 +339,7 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
     assert(code && ip);
 
     MakePushPopReg(code, ip, x86_POP, x86_R8);        //pop r8
-     MakePushPopReg(code, ip, x86_POP, x86_R9);       //pop r9
+    MakePushPopReg(code, ip, x86_POP, x86_R9);       //pop r9
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
@@ -540,9 +508,49 @@ void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned i
         *reg     = ConvertMyRegInx86Reg((REGISTERS)in_code[(*in_ip)++]);
 }
 
+void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
+{
+    code[(*ip)] = 0x48;
+    if (*reg >= x86_R8)
+    {
+        code[(*ip)] |= 0b1;
+        *reg = (x86_REGISTERS)(*reg & 0b111);
+    }
+    (*ip)++;
+}
+
+void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
+{
+    code[(*ip)] = 0x48;
+    if (*reg1 >= x86_R8)
+    {
+        code[(*ip)] |= 0b1;
+        *reg1 = (x86_REGISTERS)(*reg1 & 0b111);
+    }
+    if (*reg2 >= x86_R8)
+    {
+        code[(*ip)] |= 0b100;
+        *reg2 = (x86_REGISTERS)(*reg2 & 0b111);        
+    }
+    (*ip)++;
+}
+
+void MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
+{
+    PutPrefixForTwoReg(code, ip, &reg_to, &reg_from);
+
+    code[(*ip)++] = x86_MOV;
+    code[(*ip)++] = 0xc0 | reg_to | (reg_from << 3);
+}
+
+
 void MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
 {
-
+    if (reg >= x86_R8)
+    {
+        code[(*ip)++] = 0x41;
+        reg = (x86_REGISTERS)(reg & 0b111);
+    }
     code[(*ip)++] = (char)command | (char)reg;
 }
 
