@@ -48,12 +48,12 @@ enum x86_COMMANDS
 
 enum x86_CMD_ARGUMENTS
 {
-    x86_MUL_WITH_REG  = 0xe0,
     x86_DIV_WITH_REG  = 0xf0,
-    x86_STD_MODRM_MOD = 0b11,
+    x86_MUL_WITH_REG  = 0xe0,
     x86_NEXT_IS_INT   = 0x25,
     x86_POP_MEM       = 0x8f,
     x86_PUSH_MEM      = 0xff,
+    x86_STD_MODRM_MOD = 0b11,
 };
 
 enum x86_REGISTERS
@@ -100,6 +100,9 @@ void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, u
 void          PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2);
 void          PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg);
 void          MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from);
+void          DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip);
+void          CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* out_ip, char* ram, char** in_command_out_command_match);
+void          MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -160,6 +163,48 @@ void Run(char* out_code)
         "ret\n\t"
         ".att_syntax prefix\n"
     );
+}
+
+int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
+{
+    size_t in_ip  = 0;
+    size_t out_ip = 0;
+    char** in_command_out_command_match = (char**)calloc(in_header->commands_number, sizeof(char*));
+
+    //==========================FIRST PASS==============================
+    printf("First compilation pass...\n");
+    while (in_ip < in_header->commands_number)
+    {
+        int cmd = in_code[in_ip];
+        in_command_out_command_match[in_ip] = &out_code[out_ip];
+
+        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
+
+        #ifdef DEBUG
+            printf("cmd    = %b\n", cmd);
+            DumpInOutCode(in_code, in_ip, out_code, out_ip);            
+        #endif
+    }
+    //==================================================================
+    
+    //==========================SECOND PASS==============================
+    printf("Second compilation pass...\n");
+    in_ip  = 0;
+    out_ip = 0;
+    while (in_ip < in_header->commands_number)
+    {
+        int cmd = in_code[in_ip];
+        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
+    }
+    //==================================================================
+
+    MakeHlt(out_code, &out_ip);     //end of program
+
+    #ifdef DEBUG
+        DumpInOutCode(in_code, in_ip, out_code, out_ip);    
+    #endif
+
+    return 0;
 }
 
 void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* out_ip, char* ram, char** in_command_out_command_match)
@@ -266,71 +311,6 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
         default:
             break;
     }    
-}
-
-void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
-{
-    printf("in_ip  = %zu\n", in_ip);
-    printf("out_ip = %zu\n", out_ip);
-
-    printf("IN_CODE:\n");
-    for (int i = 0; i < in_ip; i++)
-        printf("%X ", in_code[i]);
-    printf("\n");
-
-    printf("OUT_CODE:\n");
-    for (int i = 0; i < out_ip; i++)
-        printf("%X ", (unsigned char)out_code[i]);
-    printf("\n\n");
-}
-
-int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
-{
-    size_t in_ip  = 0;
-    size_t out_ip = 0;
-    char** in_command_out_command_match = (char**)calloc(in_header->commands_number, sizeof(char*));
-
-    //==========================FIRST PASS==============================
-    printf("First compilation pass...\n");
-    while (in_ip < in_header->commands_number)
-    {
-        int cmd = in_code[in_ip];
-        in_command_out_command_match[in_ip] = &out_code[out_ip];
-
-        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
-
-        #ifdef DEBUG
-            printf("cmd    = %b\n", cmd);
-            DumpInOutCode(in_code, in_ip, out_code, out_ip);            
-        #endif
-    }
-    //==================================================================
-    
-    //==========================SECOND PASS==============================
-    printf("Second compilation pass...\n");
-    in_ip  = 0;
-    out_ip = 0;
-    while (in_ip < in_header->commands_number)
-    {
-        int cmd = in_code[in_ip];
-        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
-    }
-    //==================================================================
-
-    MakeHlt(out_code, &out_ip);     //end of program
-
-    #ifdef DEBUG
-        DumpInOutCode(in_code, in_ip, out_code, out_ip);    
-    #endif
-
-    return 0;
-}
-
-void MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
-{
-    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
-    code[(*ip)++] = command;
-    code[(*ip)++] = 0xc0 | reg1 | (reg2 << 3);
 }
 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
@@ -526,6 +506,29 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
     }
 
     return x86_ERROR_REG;
+}
+
+void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
+{
+    printf("in_ip  = %zu\n", in_ip);
+    printf("out_ip = %zu\n", out_ip);
+
+    printf("IN_CODE:\n");
+    for (int i = 0; i < in_ip; i++)
+        printf("%X ", in_code[i]);
+    printf("\n");
+
+    printf("OUT_CODE:\n");
+    for (int i = 0; i < out_ip; i++)
+        printf("%X ", (unsigned char)out_code[i]);
+    printf("\n\n");
+}
+
+void MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
+{
+    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
+    code[(*ip)++] = command;
+    code[(*ip)++] = 0xc0 | reg1 | (reg2 << 3);
 }
 
 //!
