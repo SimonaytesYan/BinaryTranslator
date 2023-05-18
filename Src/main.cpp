@@ -130,6 +130,9 @@ int main(int argc, char* argv[])
 
     size_t out_ip = 0;
     MakeMovAbsInReg(out_code, &out_ip, (size_t)call_stack, x86_RSI); //Put call stack pointer to rsi 
+    for (int i = 0; i < out_ip; i++)
+        printf("%X ", (unsigned char)out_code[i]);
+    printf("\n");
     MakeMovAbsInReg(out_code, &out_ip, (size_t)ram,        x86_RDI); //Put ram pointer to rdi
 
     #ifdef DEBUG
@@ -332,7 +335,7 @@ void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
         code[(*ip)] |= 0b1;
         *reg = (x86_REGISTERS)(*reg & 0b111);
     }
-    *ip++;
+    (*ip)++;
 }
 
 void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
@@ -348,7 +351,7 @@ void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTE
         code[(*ip)] |= 0b100;
         *reg2 = (x86_REGISTERS)(*reg2 & 0b111);        
     }
-    *ip++;
+    (*ip)++;
 }
 
 void MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
@@ -378,12 +381,12 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 
     code[(*ip)++] = x86_MUL;
     if (is_mul)
-        code[*ip++] = x86_MUL_WITH_REG | x86_R8;
+        code[(*ip)++] = x86_MUL_WITH_REG | x86_R8;
     else
-        code[*ip++] = x86_DIV_WITH_REG | x86_R8;
+        code[(*ip)++] = x86_DIV_WITH_REG | x86_R8;
 
 
-    MakePushPopReg(code, ip, x86_PUSH, x86_RAX);      //push rax
+    MakePushPopReg  (code, ip, x86_PUSH, x86_RAX);          //push rax
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R10);           //mov r10, rax  ;recover rax
 }
 
@@ -539,6 +542,7 @@ void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned i
 
 void MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
 {
+
     code[(*ip)++] = (char)command | (char)reg;
 }
 
