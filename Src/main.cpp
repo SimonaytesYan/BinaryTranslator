@@ -451,7 +451,6 @@ int MakeReturn(char* out_code, size_t* out_ip)
     out_code[(*out_ip)++] = 0xff;                                   //
     out_code[(*out_ip)++] = 0x20 | x86_RSI;                         //jmp [rsi]
 
-    MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);
     return 0;
 }
 
@@ -484,6 +483,8 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char**
 
     out_code[(*out_ip)++] = 0xff;                                               //
     out_code[(*out_ip)++] = x86_JMP | x86_RAX;                                  //jmp rax
+
+    MakeIncDec(out_code, out_ip, x86_RSI, x86_DEC);                             //call stack pointer change after after return from function
 
     return 0;
 }
