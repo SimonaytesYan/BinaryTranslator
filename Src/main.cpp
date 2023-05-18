@@ -162,6 +162,128 @@ void Run(char* out_code)
     );
 }
 
+void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* out_ip, char* ram, char** in_command_out_command_match)
+{
+    switch (cmd & CMD_MASK)
+    {
+        case CMD_ADD:
+        {
+            #ifdef DEBUG
+                printf("ADD\n");
+            #endif
+
+            in_ip++;
+            MakeAddSub(out_code, out_ip, x86_ADD);
+            break;
+        }
+
+        case CMD_SUB:
+        {
+            #ifdef DEBUG
+                printf("SUB\n");
+            #endif
+                
+            in_ip++;
+            MakeAddSub(out_code, out_ip, x86_SUB);
+            break;                
+        }
+
+        case CMD_MUL:
+        {  
+            #ifdef DEBUG
+                printf("MUL\n");
+            #endif
+                
+            in_ip++; 
+            MakeMulDiv(out_code, out_ip, true);
+            break;
+        }
+
+        case CMD_DIV:
+        {
+            #ifdef DEBUG
+                printf("DIV\n");
+            #endif
+                
+            in_ip++;
+            MakeMulDiv(out_code, out_ip, false);
+            break;
+        }
+
+        case CMD_HLT:
+        {
+            #ifdef DEBUG
+                printf("HLT\n");
+            #endif
+                
+            in_ip++;
+            MakeHlt(out_code, out_ip);
+            break;
+        }
+
+        case CMD_PUSH:
+        {
+            #ifdef DEBUG
+                printf("PUSH\n");
+            #endif
+            
+            MakePush(out_code, out_ip, in_code, in_ip, ram);
+            break;
+        }
+
+        case CMD_POP:
+        {
+            #ifdef DEBUG
+                printf("POP\n");
+            #endif
+                
+            MakePop(out_code, out_ip, in_code, in_ip, ram);
+            break;
+        }
+
+        case CMD_CALL:
+        {
+            #ifdef DEBUG
+                printf("CALL\n");
+            #endif
+
+            in_ip++;
+            MakeCall(out_code, out_ip, in_code, in_ip, in_command_out_command_match);
+            break;
+        }
+
+        case CMD_RET:
+        {
+            #ifdef DEBUG
+                printf("RET\n");
+            #endif
+
+            in_ip++;
+            MakeReturn(out_code, out_ip);
+            break;
+        }
+
+        default:
+            break;
+    }    
+}
+
+void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
+{
+    printf("in_ip  = %zu\n", in_ip);
+    printf("out_ip = %zu\n", out_ip);
+
+    printf("IN_CODE:\n");
+    for (int i = 0; i < in_ip; i++)
+        printf("%X ", in_code[i]);
+    printf("\n");
+
+    printf("OUT_CODE:\n");
+    for (int i = 0; i < out_ip; i++)
+        printf("%X ", (unsigned char)out_code[i]);
+    printf("\n\n");
+}
+
 int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
 {
     size_t in_ip  = 0;
@@ -173,142 +295,18 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
         int cmd = in_code[in_ip];
         in_command_out_command_match[in_ip] = &out_code[out_ip];
 
-        switch (cmd & CMD_MASK)
-        {
-            case CMD_ADD:
-            {
-                #ifdef DEBUG
-                    printf("ADD\n");
-                #endif
-
-                in_ip++;
-                MakeAddSub(out_code, &out_ip, x86_ADD);
-                break;
-            }
-
-            case CMD_SUB:
-            {
-                #ifdef DEBUG
-                    printf("SUB\n");
-                #endif
-                
-                in_ip++;
-                MakeAddSub(out_code, &out_ip, x86_SUB);
-                break;                
-            }
-
-            case CMD_MUL:
-            {  
-                #ifdef DEBUG
-                    printf("MUL\n");
-                #endif
-                
-                in_ip++; 
-                MakeMulDiv(out_code, &out_ip, true);
-                break;
-            }
-
-            case CMD_DIV:
-            {
-                #ifdef DEBUG
-                    printf("DIV\n");
-                #endif
-                
-                in_ip++;
-                MakeMulDiv(out_code, &out_ip, false);
-                break;
-            }
-
-            case CMD_HLT:
-            {
-                #ifdef DEBUG
-                    printf("HLT\n");
-                #endif
-                
-                in_ip++;
-                MakeHlt(out_code, &out_ip);
-                break;
-            }
-
-            case CMD_PUSH:
-            {
-                #ifdef DEBUG
-                    printf("PUSH\n");
-                #endif
-                
-                MakePush(out_code, &out_ip, in_code, &in_ip, ram);
-                break;
-            }
-
-            case CMD_POP:
-            {
-                #ifdef DEBUG
-                    printf("POP\n");
-                #endif
-                
-                MakePop(out_code, &out_ip, in_code, &in_ip, ram);
-                break;
-            }
-
-            case CMD_CALL:
-            {
-                #ifdef DEBUG
-                    printf("CALL\n");
-                #endif
-
-                in_ip++;
-                MakeCall(out_code, &out_ip, in_code, &in_ip, in_command_out_command_match);
-                break;
-            }
-
-            case CMD_RET:
-            {
-                #ifdef DEBUG
-                    printf("RET\n");
-                #endif
-
-                in_ip++;
-                MakeReturn(out_code, &out_ip);
-                break;
-            }
-
-            default:
-                break;
-        }
+        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
 
         #ifdef DEBUG
             printf("cmd    = %b\n", cmd);
-
-            printf("in_ip  = %zu\n", in_ip);
-            printf("out_ip = %zu\n", out_ip);
-
-            printf("IN_CODE:\n");
-            for (int i = 0; i < in_ip; i++)
-                printf("%X ", in_code[i]);
-            printf("\n");
-
-            printf("OUT_CODE:\n");
-            for (int i = 0; i < out_ip; i++)
-                printf("%X ", (unsigned char)out_code[i]);
-            printf("\n\n");
+            DumpInOutCode(in_code, in_ip, out_code, out_ip);            
         #endif
     }
 
     MakeHlt(out_code, &out_ip);
 
-     #ifdef DEBUG
-        printf("in_ip  = %zu\n", in_ip);
-        printf("out_ip = %zu\n", out_ip);
-
-        printf("IN_CODE:\n");
-        for (int i = 0; i < in_ip; i++)
-            printf("%X ", in_code[i]);
-        printf("\n");
-
-        printf("OUT_CODE:\n");
-        for (int i = 0; i < out_ip; i++)
-            printf("%X ", (unsigned char)out_code[i]);
-        printf("\n\n");
+    #ifdef DEBUG
+        DumpInOutCode(in_code, in_ip, out_code, out_ip);    
     #endif
 
     return 0;
@@ -446,7 +444,12 @@ int MakeReturn(char* out_code, size_t* out_ip)
 int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
 {
     size_t in_code_label = in_code[(*in_ip)++];
-    size_t label         = (size_t)in_command_out_command_match[in_code_label];                
+    size_t label         = (size_t)in_command_out_command_match[in_code_label];
+
+    #ifdef DEBUG
+        printf("in_code_label = %x\n", in_code_label);
+        printf("label         = %x\n", label);
+    #endif                
     size_t ret_address   = (size_t)&out_code[*out_ip];
     
     MakeMovAbsInReg(out_code, out_ip, ret_address, x86_R8);                     //movabs r8, ret_address
