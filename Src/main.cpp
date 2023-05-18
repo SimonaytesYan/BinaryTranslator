@@ -104,6 +104,7 @@ void          CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code,
 void          MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
 void          MakeSyscall(char* code, size_t* ip);
 void          NullifyReg(char* code, size_t* ip, x86_REGISTERS reg);
+void          MakeAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -424,10 +425,10 @@ int MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* r
 
 void MakeReturn(char* code, size_t* ip)
 {
-    MakeIncDec(code, ip, x86_RSI, x86_DEC);     //dec rsi
+    MakeAddSubNumWithReg(code, ip, x86_RSI, 8, x86_SUB); // sub rsi, 8
 
-    code[(*ip)++] = 0xff;                       //
-    code[(*ip)++] = 0x20 | x86_RSI;             //jmp [rsi]
+    code[(*ip)++] = 0xff;                                //
+    code[(*ip)++] = 0x20 | x86_RSI;                      //jmp [rsi]
 }
 
 void MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg)
@@ -457,15 +458,12 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char**
     out_code[(*out_ip)++] = x86_MOV;                        //                                                          //             |
     out_code[(*out_ip)++] = (char)(reg1 | (reg2 << 3));     //mov [rsi], r8                                             //             |
                                                                                                                         //             |
-    MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);         //inc rsi                                                   //             |
-    MakeMovAbsInReg(out_code, out_ip, label, x86_R8);       //movabs r8, label                                          //             |
-    MakeJmpToReg(out_code, out_ip, x86_R8);                 //jmp r8                                                    //             |
+    MakeAddSubNumWithReg(out_code, out_ip, x86_RSI, 8, x86_ADD);// add rsi, 8                                           //             |
+    MakeMovAbsInReg(out_code, out_ip, label, x86_R8);           //movabs r8, label                                      //             |
+    MakeJmpToReg(out_code, out_ip, x86_R8);                     //jmp r8                                                //             |
                                                                                                                         //             |
     size_t curr_address = (size_t)&out_code[*out_ip];     //put return_address --------------------------------------------------------|
     memcpy(ret_address, &curr_address, sizeof(size_t));
-    
-    MakeIncDec(out_code, out_ip, x86_RSI, x86_DEC);         //dec rsi
-                                                            //change call stack pointer change after after return from function
 
     return 0;
 }
@@ -518,6 +516,21 @@ void MakeSyscall(char* code, size_t* ip)
 {
     code[(*ip)++] = 0x0F;
     code[(*ip)++] = 0x05;
+}
+
+void MakeAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command)
+{
+    PutPrefixForOneReg(code, ip, &reg);
+
+    code[(*ip)++] = 0x81;
+
+    if (command == x86_ADD)
+        code[(*ip)++] = 0xc0 | reg;
+    else
+        code[(*ip)++] = 0xe8 | reg;
+
+    memcpy(&code[*ip], &number, sizeof(int));
+    *ip += sizeof(int);
 }
 
 void NullifyReg(char* code, size_t* ip, x86_REGISTERS reg)
