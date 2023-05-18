@@ -33,16 +33,17 @@ enum COMMANDS
 enum x86_COMMANDS
 {
     x86_ADD     = 0x01,
-    x86_SUB     = 0x29,
-    x86_MUL     = 0xf7,
+    x86_DEC     = 0xc8,
     x86_DIV     = 0xf7,
+    x86_INC     = 0xc0,
+    x86_JMP     = 0xe0,
+    x86_MUL     = 0xf7,
+    x86_MOV_ABS = 0xb8,
+    x86_MOV     = 0x89,
     x86_PUSH    = 0x50,
     x86_PUSH_N  = 0x68,
     x86_POP     = 0x58,
-    x86_MOV_ABS = 0xb8,
-    x86_INC     = 0xc0,
-    x86_DEC     = 0xc8,
-    x86_JMP     = 0xe0,
+    x86_SUB     = 0x29,
 };
 
 enum x86_CMD_ARGUMENTS
@@ -93,7 +94,7 @@ int  MakeHlt(char* code, size_t* ip);
 
 void          MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
 void          MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command);
-char          MakePushPopRegOpcode(x86_COMMANDS command, x86_REGISTERS reg);
+void          MakePushPopRegOpcode(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg);
 char          MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm);
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg);
@@ -306,20 +307,25 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     return 0;
 }
 
+void MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
+{
+    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
+    code[(*ip)++] = command;
+    code[(*ip)++] = 0xc0 | reg1 | (reg2 << 3);
+}
+
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
 {
     assert(code && ip);
-    code[(*ip)++] = MakePushPopRegOpcode(x86_POP, x86_RAX);                     //pop rax
-    code[(*ip)++] = MakePushPopRegOpcode(x86_POP, x86_RBX);                     //pop rbx
+    MakePushPopRegOpcode(code, ip, x86_POP, x86_R8);    //pop r8
+    MakePushPopRegOpcode(code, ip, x86_POP, x86_R9);    //pop r9
     
-    code[(*ip)++] = command;                                                    //
-    code[(*ip)++] = MakeMODRMArgument(x86_STD_MODRM_MOD, x86_RAX, x86_RBX);     //add rax, rbx
+    MakeAddSubRegs(code, ip, command, x86_R8, x86_R9);  //add r8, r9
 
-    code[(*ip)++] = MakePushPopRegOpcode(x86_PUSH, x86_RAX);                    //push rax
+    MakePushPopRegOpcode(code, ip, x86_PUSH, x86_R8);  //push r8
 }
 
-
-void PutPrefixDependingOnReg(char* code, size_t* ip, x86_REGISTERS* reg)
+void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
 {
     code[(*ip)] = 0x48;
     if (*reg >= x86_R8)
@@ -330,6 +336,30 @@ void PutPrefixDependingOnReg(char* code, size_t* ip, x86_REGISTERS* reg)
     *ip++;
 }
 
+void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
+{
+    code[(*ip)] = 0x48;
+    if (*reg1 >= x86_R8)
+    {
+        code[(*ip)] |= 0b1;
+        *reg1 = (x86_REGISTERS)(*reg1 & 0b111);
+    }
+    if (*reg2 >= x86_R8)
+    {
+        code[(*ip)] |= 0b100;
+        *reg2 = (x86_REGISTERS)(*reg2 & 0b111);        
+    }
+    *ip++;
+}
+
+void MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
+{
+    PutPrefixForTwoReg(code, ip, &reg_to, &reg_from);
+
+    code[(*ip)++] = x86_MOV;
+    code[(*ip)++] = 0xc0 | reg_to | (reg_from << 3);
+}
+
 //!
 //!is_mul = true  if mul
 //!       = false if div
@@ -338,17 +368,14 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 {
     assert(code && ip);
 
-    code[(*ip)++] = MakePushPopRegOpcode(x86_POP, x86_R8);          //pop r8
+    MakePushPopRegOpcode(code, ip, x86_POP, x86_R8);        //pop r8
+     MakePushPopRegOpcode(code, ip, x86_POP, x86_R9);       //pop r9
 
-    code[(*ip)++] = MakePushPopRegOpcode(x86_POP, x86_R9);          //pop r9
-
-    //TODO mov r10, rax                                             //put old rax value in r10
-
-    //TODO mov rax, r9
-
+    MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
+    MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
 
     x86_REGISTERS reg = x86_R8;
-    PutPrefixDependingOnReg(code, ip, &reg);
+    PutPrefixForOneReg(code, ip, &reg);
 
     code[(*ip)++] = x86_MUL;
     if (is_mul)
@@ -357,9 +384,8 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
         code[*ip++] = x86_DIV_WITH_REG | x86_R8;
 
 
-    code[(*ip)++] = MakePushPopRegOpcode(x86_PUSH, x86_RAX);        //push rax
-
-    //TODO mov r10, rax                       //recover rax
+    MakePushPopRegOpcode(code, ip, x86_PUSH, x86_RAX);      //push rax
+    MakeMoveRegToReg(code, ip, x86_RAX, x86_R10);           //mov r10, rax  ;recover rax
 }
 
 int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
@@ -386,7 +412,7 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     }
     else if (command & ARG_REG)
     {
-        out_code[(*out_ip)++] = MakePushPopRegOpcode(x86_PUSH, reg);
+        MakePushPopRegOpcode(out_code, out_ip, x86_PUSH, reg);
     }
     else if (command & ARG_NUM)
     {
@@ -452,9 +478,9 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
     
     MakeMovAbsInReg(out_code, out_ip, ret_address, x86_R8);                     //movabs r8, ret_address
 
-    char mov_rsi[] = {(char)0x4c, (char)0x89, (char)x86_RSI | (char)x86_R8};    //
+    char mov_rsi[] = {(char)0x4c, x86_MOV, (char)x86_RSI | (char)x86_R8};       //
     memcpy(&out_code[*out_ip], mov_rsi, 3);                                     //
-    *out_ip += 3;                                                               //mov [rsi], r8    
+    *out_ip += 3;                                                               //mov [rsi], r8
     MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);                             //inc rsi
 
     MakeMovAbsInReg(out_code, out_ip, label, x86_RAX);                          //movabs rax, label
@@ -523,14 +549,14 @@ char MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm)
     return (char)(mod << 6) | (char)(reg << 3) | rm;  
 }
 
-char MakePushPopRegOpcode(x86_COMMANDS command, x86_REGISTERS reg)
+void MakePushPopRegOpcode(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
 {
-    return (char)command | (char)reg;
+    code[(*ip)++] = (char)command | (char)reg;
 }
 
 void MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
 {
-    PutPrefixDependingOnReg(code, ip, &reg);
+    PutPrefixForOneReg(code, ip, &reg);
     
     code[(*ip)++] = x86_MOV_ABS | reg;                      //
     memcpy(&code[*ip], &number, sizeof(size_t));            //
@@ -539,7 +565,7 @@ void MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
 
 void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
 {
-    PutPrefixDependingOnReg(code, ip, &reg);
+    PutPrefixForOneReg(code, ip, &reg);
     
     
     code[(*ip)++] = 0xff;
