@@ -92,13 +92,12 @@ int  MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
 int  MakeReturn(char* out_code, size_t* out_ip);
 int  MakeHlt(char* code, size_t* ip);
 
+x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 void          MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
 void          MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command);
-void          MakePushPopRegOpcode(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg);
-char          MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm);
-x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
+void          MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg);
 void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg);
-
+void          PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2);
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
 int main(int argc, char* argv[])
@@ -317,12 +316,12 @@ void MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
 {
     assert(code && ip);
-    MakePushPopRegOpcode(code, ip, x86_POP, x86_R8);    //pop r8
-    MakePushPopRegOpcode(code, ip, x86_POP, x86_R9);    //pop r9
+    MakePushPopReg(code, ip, x86_POP, x86_R8);    //pop r8
+    MakePushPopReg(code, ip, x86_POP, x86_R9);    //pop r9
     
     MakeAddSubRegs(code, ip, command, x86_R8, x86_R9);  //add r8, r9
 
-    MakePushPopRegOpcode(code, ip, x86_PUSH, x86_R8);  //push r8
+    MakePushPopReg(code, ip, x86_PUSH, x86_R8);  //push r8
 }
 
 void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
@@ -368,8 +367,8 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 {
     assert(code && ip);
 
-    MakePushPopRegOpcode(code, ip, x86_POP, x86_R8);        //pop r8
-     MakePushPopRegOpcode(code, ip, x86_POP, x86_R9);       //pop r9
+    MakePushPopReg(code, ip, x86_POP, x86_R8);        //pop r8
+     MakePushPopReg(code, ip, x86_POP, x86_R9);       //pop r9
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
@@ -384,7 +383,7 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
         code[*ip++] = x86_DIV_WITH_REG | x86_R8;
 
 
-    MakePushPopRegOpcode(code, ip, x86_PUSH, x86_RAX);      //push rax
+    MakePushPopReg(code, ip, x86_PUSH, x86_RAX);      //push rax
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R10);           //mov r10, rax  ;recover rax
 }
 
@@ -412,7 +411,7 @@ int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* 
     }
     else if (command & ARG_REG)
     {
-        MakePushPopRegOpcode(out_code, out_ip, x86_PUSH, reg);
+        MakePushPopReg(out_code, out_ip, x86_PUSH, reg);
     }
     else if (command & ARG_NUM)
     {
@@ -538,18 +537,7 @@ void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned i
         *reg     = ConvertMyRegInx86Reg((REGISTERS)in_code[(*in_ip)++]);
 }
 
-//!
-//!\param [in] mod - 2 bits
-//!\param [in] reg - 3 bits
-//!\param [in] rm  - 3 bits
-//![ mod ][ reg ][ rm ]
-//!
-char MakeMODRMArgument(char mod, x86_REGISTERS reg, char rm)
-{
-    return (char)(mod << 6) | (char)(reg << 3) | rm;  
-}
-
-void MakePushPopRegOpcode(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
+void MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
 {
     code[(*ip)++] = (char)command | (char)reg;
 }
