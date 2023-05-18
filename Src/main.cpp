@@ -85,12 +85,12 @@ int  GetFileSize(const char *file_name);
 int  ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath);
 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command);
+int  MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
+int  MakeHlt(char* code, size_t* ip);
 void MakeMulDiv(char* code, size_t* ip, bool is_mul);
 int  MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 int  MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
-int  MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip);
 int  MakeReturn(char* out_code, size_t* out_ip);
-int  MakeHlt(char* code, size_t* ip);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 void          MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
@@ -166,10 +166,12 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
 {
     size_t in_ip  = 0;
     size_t out_ip = 0;
+    char** in_command_out_command_match = (char**)calloc(in_header->commands_number, sizeof(char*));
 
     while (in_ip < in_header->commands_number)
     {
         int cmd = in_code[in_ip];
+        in_command_out_command_match[in_ip] = &out_code[out_ip];
 
         switch (cmd & CMD_MASK)
         {
@@ -255,7 +257,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
                 #endif
 
                 in_ip++;
-                MakeCall(out_code, &out_ip, in_code, &in_ip);
+                MakeCall(out_code, &out_ip, in_code, &in_ip, in_command_out_command_match);
                 break;
             }
 
@@ -441,16 +443,20 @@ int MakeReturn(char* out_code, size_t* out_ip)
     return 0;
 }
 
-int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip)
+int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
 {
-    size_t label       = in_code[(*in_ip)++] + (size_t)out_code;
-    size_t ret_address = (size_t)&out_code[*out_ip];
+    size_t in_code_label = in_code[(*in_ip)++];
+    size_t label         = (size_t)in_command_out_command_match[in_code_label];                
+    size_t ret_address   = (size_t)&out_code[*out_ip];
     
     MakeMovAbsInReg(out_code, out_ip, ret_address, x86_R8);                     //movabs r8, ret_address
 
-    char mov_rsi[] = {(char)0x4c, x86_MOV, (char)x86_RSI | (char)x86_R8};       //
-    memcpy(&out_code[*out_ip], mov_rsi, 3);                                     //
-    *out_ip += 3;                                                               //mov [rsi], r8
+    x86_REGISTERS reg2 = x86_R8;                                                //
+    x86_REGISTERS reg1 = x86_RSI;                                               //            
+    PutPrefixForTwoReg(out_code, out_ip, &reg1, &reg2);                         //
+    out_code[(*out_ip)++] = x86_MOV;                                            //
+    out_code[(*out_ip)++] = (char)(reg1 | (reg2 << 3));                         //mov [rsi], r8
+
     MakeIncDec(out_code, out_ip, x86_RSI, x86_INC);                             //inc rsi
 
     MakeMovAbsInReg(out_code, out_ip, label, x86_RAX);                          //movabs rax, label
@@ -542,7 +548,6 @@ void MakeMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTER
     code[(*ip)++] = x86_MOV;
     code[(*ip)++] = 0xc0 | reg_to | (reg_from << 3);
 }
-
 
 void MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
 {
