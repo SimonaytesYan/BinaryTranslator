@@ -172,7 +172,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("ADD\n");
             #endif
 
-            in_ip++;
+            (*in_ip)++;
             MakeAddSub(out_code, out_ip, x86_ADD);
             break;
         }
@@ -183,7 +183,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("SUB\n");
             #endif
                 
-            in_ip++;
+            (*in_ip)++;
             MakeAddSub(out_code, out_ip, x86_SUB);
             break;                
         }
@@ -194,7 +194,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("MUL\n");
             #endif
                 
-            in_ip++; 
+            (*in_ip)++; 
             MakeMulDiv(out_code, out_ip, true);
             break;
         }
@@ -205,7 +205,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("DIV\n");
             #endif
                 
-            in_ip++;
+            (*in_ip)++;
             MakeMulDiv(out_code, out_ip, false);
             break;
         }
@@ -216,7 +216,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("HLT\n");
             #endif
                 
-            in_ip++;
+            (*in_ip)++;
             MakeHlt(out_code, out_ip);
             break;
         }
@@ -247,7 +247,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("CALL\n");
             #endif
 
-            in_ip++;
+            (*in_ip)++;
             MakeCall(out_code, out_ip, in_code, in_ip, in_command_out_command_match);
             break;
         }
@@ -258,7 +258,7 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
                 printf("RET\n");
             #endif
 
-            in_ip++;
+            (*in_ip)++;
             MakeReturn(out_code, out_ip);
             break;
         }
@@ -290,6 +290,8 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     size_t out_ip = 0;
     char** in_command_out_command_match = (char**)calloc(in_header->commands_number, sizeof(char*));
 
+    //==========================FIRST PASS==============================
+    printf("First compilation pass...\n");
     while (in_ip < in_header->commands_number)
     {
         int cmd = in_code[in_ip];
@@ -302,8 +304,20 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
             DumpInOutCode(in_code, in_ip, out_code, out_ip);            
         #endif
     }
+    //==================================================================
+    
+    //==========================SECOND PASS==============================
+    printf("Second compilation pass...\n");
+    in_ip  = 0;
+    out_ip = 0;
+    while (in_ip < in_header->commands_number)
+    {
+        int cmd = in_code[in_ip];
+        CommandParse(cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
+    }
+    //==================================================================
 
-    MakeHlt(out_code, &out_ip);
+    MakeHlt(out_code, &out_ip);     //end of program
 
     #ifdef DEBUG
         DumpInOutCode(in_code, in_ip, out_code, out_ip);    
@@ -443,6 +457,10 @@ int MakeReturn(char* out_code, size_t* out_ip)
 
 int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
 {
+    #ifdef DEBUG
+        printf("in ip = %d\n", (*in_ip));
+    #endif
+
     size_t in_code_label = in_code[(*in_ip)++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
