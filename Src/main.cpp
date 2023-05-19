@@ -86,6 +86,7 @@ int  ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath);
 void  MakeAddSub(char* code, size_t* ip, x86_COMMANDS command);
 int   MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
 int   MakeHlt(char* code, size_t* ip);
+void  MakeJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
 void  MakeMulDiv(char* code, size_t* ip, bool is_mul);
 int   MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 int   MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
@@ -105,6 +106,7 @@ void          MakeAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_R
 void          MakeSyscall(char* code, size_t* ip);
 void          NullifyReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command);
+void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -305,9 +307,28 @@ void CommandParse(int cmd, int* in_code, size_t* in_ip, char* out_code, size_t* 
             break;
         }
 
+        case CMD_JMP:
+        {
+            #ifdef DEBUG
+                printf("JMP\n");
+            #endif
+
+            (*in_ip)++;
+            MakeJmp(out_code, out_ip, in_code, in_ip, in_command_out_command_match);
+        }
+
         default:
             break;
     }    
+}
+
+void MakeJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
+{
+    size_t in_code_label = in_code[(*in_ip)++];
+    size_t label         = (size_t)in_command_out_command_match[in_code_label];
+
+    MakeMovAbsInReg(out_code, out_ip, label, x86_R8);       //movabs r8, label
+    MakeJmpToReg(out_code, out_ip, x86_R8);                 //jmp r8
 }
 
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
