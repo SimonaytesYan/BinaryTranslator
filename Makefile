@@ -11,5 +11,6 @@ command_system_release:
 command_system_debug:
 	g++ -c $(DEBUG)   Src/CommandSystem/CommandSystem.cpp -o Obj/CommandSystem.o 
 
-run:
-	Exe/Translate
+create_dir:
+	mkdir Exe
+	mkDir Obj
