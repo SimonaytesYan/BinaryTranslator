@@ -123,8 +123,8 @@ void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGI
 
 //=============================================STD LIB====================================================
 
-extern "C" void OutputNum10(long long number);
-extern "C" int  InputNumber10();
+extern "C" void      OutputNum10(long long number);
+extern "C" long long InputNumber10();
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 

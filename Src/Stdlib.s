@@ -104,28 +104,40 @@ InputNumber10:
     mov rdx, MAX_SYMBOL_IN_NUMBER  ;
     syscall                        ; read(0, buffer, BUFSIZE)
                                    ; rax - number of bytes in input
-    mov rcx, rax
+    xor rcx, rcx
+    xor r11, r11    
+
     xor rax, rax
     xor rbx, rbx
-    mov rdx, 10
+    mov r10, 10
     .next:
+        inc rcx
         mov bl, Number[rcx - 1]
 
         cmp bl, '-'             ;
-        jne .skip_make_numb_neg;if (bl == '-')
+        jne .skip_set_numb_neg_flag;if (bl == '-')
+            mov r11, 1
+            jmp .skip_add_digit
 
-            xor rax, -1         ; 
-            inc rax             ; rax *= -1
-            jmp .end_calc
-
-        .skip_make_numb_neg:
+        .skip_set_numb_neg_flag:
         
         sub bl, '0'     ; make number from symbol
-        mul rdx         ; rax *= 10
+        mul r10         ; rax *= 10
         add rax, rbx    ; rax += rbx
-
-        loop .next
+        
+        .skip_add_digit
+        mov r8, Number[rcx] ;
+        cmp r8, 0xa         ;while (Number[rcx] != '\n')  
+        jne .next           ;
     .end_calc:
+
+    jne .skip_make_numb_neg
+        xor rax, -1
+        inc rax
+
+    .skip_make_numb_neg:
+
+    ret
     
 
 section .bss
