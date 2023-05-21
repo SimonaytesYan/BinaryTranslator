@@ -1,5 +1,5 @@
 section .text
-global OutputNum10
+global OutputNumber10
 global InputNumber10 
 
 ;-------------------------------------------
@@ -13,7 +13,7 @@ global InputNumber10
 ;
 ;DESTROYS:	rax, rbx, rcx, rdx, r11, rsi, r8
 ;-------------------------------------------
-OutputNum10:
+OutputNumber10:
     mov rax, rdi
 
     xor r8, r8
@@ -95,7 +95,7 @@ PutNumberInBuffer:
 ;
 ;OUTPUT:	None
 ;
-;DESTROYS: rax, rbx, rcx, rdx, rsi, rdi, rsi, rcx
+;DESTROYS: rax, rbx, rcx, rdx, rsi, rdi, r8, r10, r11
 ;------------------------------------------------
 InputNumber10:
     xor rax, rax                   ; 0 - syscall number for 'read'

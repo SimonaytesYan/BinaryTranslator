@@ -35,6 +35,7 @@ enum x86_COMMANDS
     x86_ERROR_CMD = 0x00,
 
     x86_ADD     = 0x01,
+    x86_CALL    = 0xd0,
     x86_CMP     = 0x39,
     x86_DEC     = 0xc8,
     x86_DIV     = 0xf7,
@@ -102,6 +103,8 @@ void  MakeMulDiv(char* code, size_t* ip, bool is_mul);
 int   MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 int   MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 void  MakeReturn(char* out_code, size_t* out_ip);
+void  MakeIn(char* code, size_t* ip);
+void  MakeOut(char* code, size_t* ip);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
@@ -120,10 +123,12 @@ void          NullifyReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command);
 void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
+void          MakePushAllRegs(char* code, size_t* ip);
+void          MakePopAllRegs(char* code, size_t* ip);
 
 //=============================================STD LIB====================================================
 
-extern "C" void      OutputNum10(long long number);
+extern "C" void      OutputNumber10(long long number);
 extern "C" long long InputNumber10();
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
@@ -354,9 +359,50 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             break;
         }
 
+        case CMD_IN:
+        {
+            #ifdef DEBUG
+                printf("IN\n");
+            #endif
+            
+            (*in_ip)++;
+            MakeIn(out_code, out_ip);
+        }
+        case CMD_OUT:
+        {
+            #ifdef DEBUG
+                printf("OUT\n");
+            #endif
+            (*in_ip)++;
+            MakeOut(out_code, out_ip);
+        }
+
         default:
             break;
     }    
+}
+
+void  MakeIn(char* code, size_t* ip)
+{
+    MakePushAllRegs(code, ip);
+
+    MakeMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
+    code[(*ip)++] = 0xff;                                       //
+    code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
+
+    MakePopAllRegs(code, ip);
+}
+
+void  MakeOut(char* code, size_t* ip)
+{
+    MakePushAllRegs(code, ip);
+
+    MakePushPopReg(code, ip, x86_POP, x86_RDI);                 //argument for OutNumber10
+    MakeMovAbsInReg(code, ip, (size_t)OutputNumber10, x86_RAX); //
+    code[(*ip)++] = 0xff;                                       //
+    code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
+
+    MakePopAllRegs(code, ip);
 }
 
 void MakeJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
@@ -576,6 +622,26 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
     }
 
     return x86_ERROR_REG;
+}
+
+void MakePushAllRegs(char* code, size_t* ip)
+{
+    MakePushPopReg(code, ip, x86_PUSH, x86_RAX);
+    MakePushPopReg(code, ip, x86_PUSH, x86_RBX);
+    MakePushPopReg(code, ip, x86_PUSH, x86_RCX);
+    MakePushPopReg(code, ip, x86_PUSH, x86_RDX);
+    MakePushPopReg(code, ip, x86_PUSH, x86_RSI);
+    MakePushPopReg(code, ip, x86_PUSH, x86_RDI);
+}
+
+void MakePopAllRegs(char* code, size_t* ip)
+{
+    MakePushPopReg(code, ip, x86_POP, x86_RDI);
+    MakePushPopReg(code, ip, x86_POP, x86_RSI);
+    MakePushPopReg(code, ip, x86_POP, x86_RDX);
+    MakePushPopReg(code, ip, x86_POP, x86_RCX);
+    MakePushPopReg(code, ip, x86_POP, x86_RBX);
+    MakePushPopReg(code, ip, x86_POP, x86_RAX);
 }
 
 void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
