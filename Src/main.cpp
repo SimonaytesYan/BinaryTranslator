@@ -8,10 +8,10 @@
 
 #include "CommandSystem/CommandSystem.h"
 
+//==========================================DEFINES===========================================
+
 #define DEF_CMD(name, num, ...) \
     CMD_##name = num,
-
-//==========================================DEFINES===========================================
 
 #define DEBUG
 
@@ -120,6 +120,11 @@ void          NullifyReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command);
 void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
+
+//=============================================STD LIB====================================================
+
+extern "C" void OutputNum10(long long number);
+extern "C" int  InputNumber10();
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
