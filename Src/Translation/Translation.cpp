@@ -358,7 +358,7 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
     MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
 
-    MakeCmpTwoReg(out_code, out_ip, x86_R9, x86_R8);    //cmp r9, r8  ;reverse order, because soft CPU conditional jmp implementation 
+    MakeCmpTwoReg(out_code, out_ip, x86_R8, x86_R9);    //cmp r8, r9
 
     x86_COMMANDS jmp_cond = ConditionalJmpConversion(command);
     long long offset = 0;
@@ -619,20 +619,20 @@ void MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg
 
 x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
 {
-    switch (command)
+    switch (command)        //reverb because soft CPU architecture
     {
         case CMD_JA:
-            return x86_JA;
-        case CMD_JAE:
-            return x86_JAE;
-        case CMD_JB:
-            return x86_JB;
-        case CMD_JBE:
             return x86_JBE;
+        case CMD_JAE:
+            return x86_JB;
+        case CMD_JB:
+            return x86_JAE;
+        case CMD_JBE:
+            return x86_JA;
         case CMD_JE:
-            return x86_JE;
-        case CMD_JNE:
             return x86_JNE;
+        case CMD_JNE:
+            return x86_JE;
             
         default:
             return x86_ERROR_CMD;
@@ -760,4 +760,3 @@ void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
     code[(*ip)++] = 0xff;
     code[(*ip)++] = command | reg;
 }
-
