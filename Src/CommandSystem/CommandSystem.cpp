@@ -8,7 +8,7 @@
         true_branch;                     \
     }
 
-int InitMyHeader(MyHeader* header, int comands_number)
+int InitMyHeader(MyHeader* header, size_t comands_number)
 {
     CHECK(header == nullptr, {fprintf(stderr, "Null header"); return -1;});
 

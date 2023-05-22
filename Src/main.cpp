@@ -104,6 +104,7 @@ int   MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char*
 int   MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 void  MakeReturn(char* out_code, size_t* out_ip);
 void  MakeIn(char* code, size_t* ip);
+void  MakeSrqt(char* code, size_t* ip);
 void  MakeOut(char* code, size_t* ip);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
@@ -125,6 +126,7 @@ void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
 void          MakePushAllRegs(char* code, size_t* ip);
 void          MakePopAllRegs(char* code, size_t* ip);
+int           SqrtInt(int x);
 
 //=============================================STD LIB====================================================
 
@@ -194,7 +196,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     char** in_command_out_command_match = (char**)calloc(in_header->commands_number + 1, sizeof(char*));
 
     //==========================FIRST PASS==============================
-    printf("First compilation pass...\n");
+    printf("First compilation...\n");
     while (in_ip < in_header->commands_number)
     {
         int cmd = in_code[in_ip];
@@ -213,7 +215,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     //==================================================================
     
     //==========================SECOND PASS==============================
-    printf("Second compilation pass...\n");
+    printf("Second compilation...\n");
     in_ip  = 0;
     out_ip = 0;
     while (in_ip < in_header->commands_number)
@@ -380,18 +382,39 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             break;
         }
 
+        case CMD_SQRT:
+        {
+            #ifdef DEBUG
+                printf("SQRT\n");
+            #endif
+            (*in_ip)++;
+            MakeSrqt(out_code, out_ip);
+            break;
+        }
+
         default:
             break;
     }    
 }
 
-void  MakeIn(char* code, size_t* ip)
+void MakeCallReg(char* code, size_t* ip, x86_REGISTERS reg)
+{
+    if (reg >= x86_R8)
+    {
+        code[(*ip)++] = 0x41;
+        reg = (x86_REGISTERS)(reg & 0b111);
+    }
+
+    code[(*ip)++] = 0xff;
+    code[(*ip)++] = x86_CALL | reg;
+}
+
+void MakeIn(char* code, size_t* ip)
 {
     MakePushAllRegs(code, ip);
 
     MakeMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
-    code[(*ip)++] = 0xff;                                       //
-    code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
+    MakeCallReg(code, ip, x86_RAX);                             //call OutputNum10
     
     MakeMoveRegToReg(code, ip, x86_R9, x86_RAX);
 
@@ -405,10 +428,10 @@ void  MakeOut(char* code, size_t* ip)
     MakePushPopReg(code, ip, x86_POP, x86_R10);
     MakePushAllRegs(code, ip);
 
-    MakeMoveRegToReg(code, ip, x86_RDI, x86_R10);//argument for OutNumber10
+    MakeMoveRegToReg(code, ip, x86_RDI, x86_R10);               //argument for OutNumber10
+
     MakeMovAbsInReg(code, ip, (size_t)OutputNumber10, x86_RAX); //
-    code[(*ip)++] = 0xff;                                       //
-    code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
+    MakeCallReg(code, ip, x86_RAX);                             //call OutputNum10
 
     MakePopAllRegs(code, ip);
 }
@@ -438,8 +461,6 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
         offset = (long long)label - ((long long)&out_code[*out_ip]) + 1;
     else
         offset = (long long)label - (long long)((size_t)&out_code[*out_ip] + 2 + sizeof(int)) - 1;
-
-    printf("offset = %lld\n", offset);
 
     out_code[(*out_ip)++] = 0xf;
     out_code[(*out_ip)++] = jmp_cond;
@@ -613,6 +634,19 @@ int MakeHlt(char* code, size_t* ip)
     MakeSyscall(code, ip);                      //syscall
 
     return 0;
+}
+
+void MakeSrqt(char* code, size_t* ip)
+{
+    MakePushAllRegs(code, ip);
+
+    MakeMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
+    MakeCallReg(code, ip, x86_RAX);                             //call OutputNum10
+
+    MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);
+    MakePopAllRegs(code, ip);
+
+    MakePushPopReg(code, ip, x86_PUSH, x86_R10);
 }
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
@@ -845,4 +879,13 @@ int GetFileSize(const char *file_name)
     struct stat buff = {};
     stat(file_name, &buff);
     return buff.st_size;
+}
+
+int SqrtInt(int x)
+{
+    int y = 0;
+    while (y*y <= x)
+        y++;
+    y--;
+    return y;
 }

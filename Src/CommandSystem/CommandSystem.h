@@ -46,7 +46,7 @@ struct MyHeader
     size_t commands_number = (size_t)-1;
 };
 
-int  InitMyHeader(MyHeader* header, int commands_number);
+int  InitMyHeader(MyHeader* header, size_t commands_number);
 void DumpLabels(Label* labels);
 int  CheckMyHeaderFromFile(MyHeader *header, FILE* executable_file);
 
