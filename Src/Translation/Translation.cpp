@@ -51,6 +51,7 @@ void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
 void          MakePushAllRegs(char* code, size_t* ip);
 void          MakePopAllRegs(char* code, size_t* ip);
+void          MakeCqo(char* code, size_t* ip);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -386,8 +387,8 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     size_t in_code_label = in_code[(*in_ip)++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
     MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
+    MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
 
     MakeCmpTwoReg(out_code, out_ip, x86_R8, x86_R9);    //cmp r8, r9
 
@@ -424,11 +425,15 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 {
     assert(code && ip);
 
-    MakePushPopReg(code, ip, x86_POP, x86_R8);        //pop r8
-    MakePushPopReg(code, ip, x86_POP, x86_R9);        //pop r9
+    MakePushPopReg(code, ip, x86_POP, x86_R8);        // pop r8
+    MakePushPopReg(code, ip, x86_POP, x86_R9);        // pop r9
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
-    MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
+    MakeMoveRegToReg(code, ip, x86_R11, x86_RDX);           // save rdx value to r11
+    
+    MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            // mov rax, r9
+
+    MakeCqo(code, ip);                                      //cqo 
 
     x86_REGISTERS reg = x86_R8;
     PutPrefixForOneReg(code, ip, &reg);
@@ -439,9 +444,9 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
     else
         code[(*ip)++] = x86_DIV_WITH_REG | x86_R8;
 
-
-    MakePushPopReg  (code, ip, x86_PUSH, x86_RAX);          //push rax
-    MakeMoveRegToReg(code, ip, x86_RAX, x86_R10);           //mov r10, rax  ;recover rax
+    MakePushPopReg  (code, ip, x86_PUSH, x86_RAX);          // push rax
+    MakeMoveRegToReg(code, ip, x86_RAX, x86_R10);           // mov r10, rax  ;recover rax
+    MakeMoveRegToReg(code, ip, x86_RDX, x86_R11);           // recover rdx
 }
 
 int MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
@@ -575,7 +580,7 @@ void MakeSqrt(char* code, size_t* ip)
     MakePushAllRegs(code, ip);
 
     MakeMoveRegToReg(code, ip, x86_RDI, x86_R10);               //argument for sqrt
-    
+
     MakeMovAbsInReg(code, ip, (size_t)SqrtInt, x86_RAX);        //
     MakeCallReg(code, ip, x86_RAX);                             //call sqrt
 
@@ -781,4 +786,10 @@ void MakeIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
     
     code[(*ip)++] = 0xff;
     code[(*ip)++] = command | reg;
+}
+
+void MakeCqo(char* code, size_t* ip)
+{
+    code[(*ip)++] = 0x48;
+    code[(*ip)++] = 0x99; 
 }
