@@ -36,6 +36,7 @@ enum x86_COMMANDS
     x86_PUSH    = 0x50,
     x86_PUSH_N  = 0x68,
     x86_POP     = 0x58,
+    x86_RET     = 0xc3,
     x86_SUB     = 0x29,
     x86_XOR     = 0x31,
 

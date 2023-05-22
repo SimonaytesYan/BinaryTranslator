@@ -7,7 +7,12 @@
 #include <sys/stat.h>
 
 #include "Translation.h"
+#include "../Stdlib/Stdlib.h"
 #include "../CommandSystem/CommandSystem.h"
+
+const size_t kTestNumber = 1;
+
+#define DEBUG
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
@@ -17,15 +22,15 @@ void Run(char* out_code);
 void  MakeAddSub(char* code, size_t* ip, x86_COMMANDS command);
 int   MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
 void  MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, COMMANDS command, char** in_command_out_command_match);
+void  MakeIn(char* code, size_t* ip);
 int   MakeHlt(char* code, size_t* ip);
 void  MakeJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
 void  MakeMulDiv(char* code, size_t* ip, bool is_mul);
+void  MakeOut(char* code, size_t* ip);
 int   MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 int   MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 void  MakeReturn(char* out_code, size_t* out_ip);
-void  MakeIn(char* code, size_t* ip);
 void  MakeSrqt(char* code, size_t* ip);
-void  MakeOut(char* code, size_t* ip);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
@@ -47,11 +52,6 @@ void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGI
 void          MakePushAllRegs(char* code, size_t* ip);
 void          MakePopAllRegs(char* code, size_t* ip);
 int           SqrtInt(int x);
-
-//=============================================STD LIB====================================================
-
-extern "C" void      OutputNumber10(long long number);
-extern "C" long long InputNumber10();
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -80,18 +80,48 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
 
     printf("Running\n");
 
-    Run(out_code);
-
+    for (int i = 0; i < kTestNumber; i++)
+    {
+        printf("i = %d\n", i);
+        Run(out_code);
+    }
 }
 
 void Run(char* out_code)
 {
     __asm__(
         ".intel_syntax noprefix\n\t"
-        "jmp rdi\n\t"
-        "ret\n\t"
+        "push rax\n"
+        "push rbx\n"
+        "push rcx\n"
+        "push rdx\n"
+        "push r8\n"
+        "push r9\n"
+        "push r10\n"
+        "push r11\n"
+        "push r12\n"
+        "push r13\n"
+        "push r14\n"
+        "push r15\n"
+
+        "call rdi\n\t"
+
+        "pop r15\n"
+        "pop r14\n"
+        "pop r13\n"
+        "pop r12\n"
+        "pop r11\n"
+        "pop r10\n"
+        "pop r9\n"
+        "pop r8\n"
+        "pop rdx\n"
+        "pop rcx\n"
+        "pop rbx\n"
+        "pop rax\n"
         ".att_syntax prefix\n"
     );
+
+    return;
 }
 
 int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
@@ -311,6 +341,7 @@ void MakeCallReg(char* code, size_t* ip, x86_REGISTERS reg)
     }
 
     code[(*ip)++] = 0xff;
+    printf("reg in call = %d\n", reg);
     code[(*ip)++] = x86_CALL | reg;
 }
 
@@ -328,7 +359,7 @@ void MakeIn(char* code, size_t* ip)
     MakePushPopReg(code, ip, x86_PUSH, x86_R9);
 }
 
-void  MakeOut(char* code, size_t* ip)
+void MakeOut(char* code, size_t* ip)
 {
     MakePushPopReg(code, ip, x86_POP, x86_R10);
     MakePushAllRegs(code, ip);
@@ -355,8 +386,8 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     size_t in_code_label = in_code[(*in_ip)++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
     MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
+    MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
 
     MakeCmpTwoReg(out_code, out_ip, x86_R8, x86_R9);    //cmp r8, r9
 
@@ -365,7 +396,7 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     if (label < ((size_t)&out_code[*out_ip]))
         offset = (long long)label - ((long long)&out_code[*out_ip]) + 1;
     else
-        offset = (long long)label - (long long)((size_t)&out_code[*out_ip] + 2 + sizeof(int)) - 1;
+        offset = (long long)label - (long long)((size_t)&out_code[*out_ip] + 2 + sizeof(int));
 
     out_code[(*out_ip)++] = 0xf;
     out_code[(*out_ip)++] = jmp_cond;
@@ -393,8 +424,8 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 {
     assert(code && ip);
 
-    MakePushPopReg(code, ip, x86_POP, x86_R9);        //pop r9
     MakePushPopReg(code, ip, x86_POP, x86_R8);        //pop r8
+    MakePushPopReg(code, ip, x86_POP, x86_R9);        //pop r9
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
@@ -534,10 +565,7 @@ int MakeCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char**
 
 int MakeHlt(char* code, size_t* ip)
 {
-    MakeMovAbsInReg(code, ip, 0x3c, x86_RAX);   //mov rax, 0x3c
-    NullifyReg(code, ip, x86_RDI);              //xor rdi, rdi
-    MakeSyscall(code, ip);                      //syscall
-
+    code[(*ip)++] = x86_RET;
     return 0;
 }
 
@@ -545,7 +573,7 @@ void MakeSrqt(char* code, size_t* ip)
 {
     MakePushAllRegs(code, ip);
 
-    MakeMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
+    MakeMovAbsInReg(code, ip, (size_t)SqrtInt, x86_RAX);  //
     MakeCallReg(code, ip, x86_RAX);                             //call OutputNum10
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);
