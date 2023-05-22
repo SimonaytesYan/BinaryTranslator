@@ -40,10 +40,10 @@ enum x86_COMMANDS
     x86_SUB     = 0x29,
     x86_XOR     = 0x31,
 
-    x86_JA      = 0x87,
-    x86_JAE     = 0x83,
-    x86_JB      = 0x82,
-    x86_JBE     = 0x86,
+    x86_JG      = 0x8f,
+    x86_JGE     = 0x8d,
+    x86_JL      = 0x8c,
+    x86_JLE     = 0x8e,
     x86_JE      = 0x84,
     x86_JNE     = 0x85,
 };

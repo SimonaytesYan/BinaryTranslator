@@ -658,13 +658,13 @@ x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
     switch (command)        //reverb because soft CPU architecture
     {
         case CMD_JA:
-            return x86_JBE;
+            return x86_JLE;
         case CMD_JAE:
-            return x86_JB;
+            return x86_JL;
         case CMD_JB:
-            return x86_JAE;
+            return x86_JGE;
         case CMD_JBE:
-            return x86_JA;
+            return x86_JG;
         case CMD_JE:
             return x86_JNE;
         case CMD_JNE:
