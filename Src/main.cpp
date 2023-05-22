@@ -13,7 +13,7 @@
 #define DEF_CMD(name, num, ...) \
     CMD_##name = num,
 
-#define DEBUG
+//#define DEBUG
 
 #define CHECK(condition, true_branch)   \
     if (condition)                      \
@@ -402,9 +402,10 @@ void  MakeIn(char* code, size_t* ip)
 
 void  MakeOut(char* code, size_t* ip)
 {
+    MakePushPopReg(code, ip, x86_POP, x86_R10);
     MakePushAllRegs(code, ip);
 
-    MakePushPopReg(code, ip, x86_POP, x86_RDI);                 //argument for OutNumber10
+    MakeMoveRegToReg(code, ip, x86_RDI, x86_R10);//argument for OutNumber10
     MakeMovAbsInReg(code, ip, (size_t)OutputNumber10, x86_RAX); //
     code[(*ip)++] = 0xff;                                       //
     code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
@@ -432,11 +433,13 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     MakeCmpTwoReg(out_code, out_ip, x86_R9, x86_R8);    //cmp r9, r8  ;reverse order, because soft CPU conditional jmp implementation 
 
     x86_COMMANDS jmp_cond = ConditionalJmpConversion(command);
-    int offset = 0;
-    if (label < (int)((size_t)&out_code[*out_ip]))
-        offset = (int)label - (int)((size_t)&out_code[*out_ip]) + 1;
+    long long offset = 0;
+    if (label < ((size_t)&out_code[*out_ip]))
+        offset = (long long)label - ((long long)&out_code[*out_ip]) + 1;
     else
-        offset = (int)label - (int)((size_t)&out_code[*out_ip] + 2 + sizeof(int)) - 1;
+        offset = (long long)label - (long long)((size_t)&out_code[*out_ip] + 2 + sizeof(int)) - 1;
+
+    printf("offset = %lld\n", offset);
 
     out_code[(*out_ip)++] = 0xf;
     out_code[(*out_ip)++] = jmp_cond;
