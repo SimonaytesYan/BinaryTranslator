@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include "Translation/Translation.h"
+#include "Stdlib/Stdlib.h"
 
 const size_t kMaxFilepathSize = 256;
 

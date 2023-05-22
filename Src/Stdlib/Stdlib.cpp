@@ -7,9 +7,8 @@ const size_t kBufferSize = 256;
 void OutputNumber10(long long number)
 {
     char Buffer[kBufferSize + 1] = {};
-    Buffer[kBufferSize - 1] = '\n';
 
-    int  index  = kBufferSize - 2;
+    int  index  = kBufferSize - 1;
     bool is_neg = false;
 
     if (number < 0)
@@ -17,12 +16,14 @@ void OutputNumber10(long long number)
         is_neg = true;
         number *= -1;
     }
-    while(number > 0)
+
+    do 
     {
         Buffer[index] = (number % 10) + '0';
         number /= 10;
         index--;
     }
+    while(number > 0);
 
     if (is_neg)
         Buffer[index--] = '-';
@@ -51,4 +52,13 @@ long long InputNumber10()
     if (is_neg)
         number *= -1;
     return number;
+}
+
+long long SqrtInt(long long x)
+{
+    long long y = 0;
+    while (y*y <= x)
+        y++;
+    y--;
+    return y;
 }

@@ -3,5 +3,6 @@
 
 void      OutputNumber10(long long number);
 long long InputNumber10();
+long long SqrtInt(long long x);
 
 #endif

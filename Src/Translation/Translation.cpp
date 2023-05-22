@@ -12,7 +12,7 @@
 
 const size_t kTestNumber = 1;
 
-#define DEBUG
+//#define DEBUG
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
@@ -30,7 +30,7 @@ void  MakeOut(char* code, size_t* ip);
 int   MakePop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 int   MakePush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
 void  MakeReturn(char* out_code, size_t* out_ip);
-void  MakeSrqt(char* code, size_t* ip);
+void  MakeSqrt(char* code, size_t* ip);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
@@ -51,7 +51,6 @@ void          MakeJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
 void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
 void          MakePushAllRegs(char* code, size_t* ip);
 void          MakePopAllRegs(char* code, size_t* ip);
-int           SqrtInt(int x);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -82,7 +81,9 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
 
     for (int i = 0; i < kTestNumber; i++)
     {
-        printf("i = %d\n", i);
+        #ifdef DEBUG
+            printf("i = %d\n", i);
+        #endif
         Run(out_code);
     }
 }
@@ -323,7 +324,7 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("SQRT\n");
             #endif
             (*in_ip)++;
-            MakeSrqt(out_code, out_ip);
+            MakeSqrt(out_code, out_ip);
             break;
         }
 
@@ -341,7 +342,6 @@ void MakeCallReg(char* code, size_t* ip, x86_REGISTERS reg)
     }
 
     code[(*ip)++] = 0xff;
-    printf("reg in call = %d\n", reg);
     code[(*ip)++] = x86_CALL | reg;
 }
 
@@ -569,12 +569,15 @@ int MakeHlt(char* code, size_t* ip)
     return 0;
 }
 
-void MakeSrqt(char* code, size_t* ip)
+void MakeSqrt(char* code, size_t* ip)
 {
+    MakePushPopReg(code, ip, x86_POP, x86_R10);
     MakePushAllRegs(code, ip);
 
-    MakeMovAbsInReg(code, ip, (size_t)SqrtInt, x86_RAX);  //
-    MakeCallReg(code, ip, x86_RAX);                             //call OutputNum10
+    MakeMoveRegToReg(code, ip, x86_RDI, x86_R10);               //argument for sqrt
+    
+    MakeMovAbsInReg(code, ip, (size_t)SqrtInt, x86_RAX);        //
+    MakeCallReg(code, ip, x86_RAX);                             //call sqrt
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);
     MakePopAllRegs(code, ip);
@@ -761,15 +764,6 @@ void MakePushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS 
         reg = (x86_REGISTERS)(reg & 0b111);
     }
     code[(*ip)++] = (char)command | (char)reg;
-}
-
-int SqrtInt(int x)
-{
-    int y = 0;
-    while (y*y <= x)
-        y++;
-    y--;
-    return y;
 }
 
 void MakeMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
