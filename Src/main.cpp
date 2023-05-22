@@ -203,6 +203,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
         CommandParse((COMMANDS)cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
 
         #ifdef DEBUG
+            printf("cmd    = %d\n", cmd & CMD_MASK);
             printf("cmd    = %b\n", cmd);
             DumpInOutCode(in_code, in_ip, out_code, out_ip);            
         #endif
@@ -367,6 +368,7 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             
             (*in_ip)++;
             MakeIn(out_code, out_ip);
+            break;
         }
         case CMD_OUT:
         {
@@ -375,6 +377,7 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             #endif
             (*in_ip)++;
             MakeOut(out_code, out_ip);
+            break;
         }
 
         default:
@@ -389,8 +392,12 @@ void  MakeIn(char* code, size_t* ip)
     MakeMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
     code[(*ip)++] = 0xff;                                       //
     code[(*ip)++] = x86_CALL | x86_RAX;                         //call OutputNum10
+    
+    MakeMoveRegToReg(code, ip, x86_R9, x86_RAX);
 
     MakePopAllRegs(code, ip);
+    
+    MakePushPopReg(code, ip, x86_PUSH, x86_R9);
 }
 
 void  MakeOut(char* code, size_t* ip)

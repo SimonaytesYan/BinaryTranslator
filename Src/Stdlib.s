@@ -131,6 +131,7 @@ InputNumber10:
         jne .next           ;
     .end_calc:
 
+    cmp r11, 1
     jne .skip_make_numb_neg
         xor rax, -1
         inc rax
