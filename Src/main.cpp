@@ -426,10 +426,10 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
     size_t in_code_label = in_code[(*in_ip)++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r9
-    MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r10
+    MakePushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
+    MakePushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
 
-    MakeCmpTwoReg(out_code, out_ip, x86_R8, x86_R9);    //cmp r10, r9  ;reverse order, because soft CPU conditional jmp implementation 
+    MakeCmpTwoReg(out_code, out_ip, x86_R9, x86_R8);    //cmp r9, r8  ;reverse order, because soft CPU conditional jmp implementation 
 
     x86_COMMANDS jmp_cond = ConditionalJmpConversion(command);
     int offset = 0;
@@ -448,10 +448,10 @@ void MakeConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in
 void MakeAddSub(char* code, size_t* ip, x86_COMMANDS command)
 {
     assert(code && ip);
-    MakePushPopReg(code, ip, x86_POP, x86_R8);    //pop r8
     MakePushPopReg(code, ip, x86_POP, x86_R9);    //pop r9
+    MakePushPopReg(code, ip, x86_POP, x86_R8);    //pop r8
     
-    MakeAddSubRegs(code, ip, command, x86_R8, x86_R9);  //add r8, r9
+    MakeAddSubRegs(code, ip, command, x86_R8, x86_R9);  //add(sub) r8, r9
 
     MakePushPopReg(code, ip, x86_PUSH, x86_R8);  //push r8
 }
@@ -464,8 +464,8 @@ void MakeMulDiv(char* code, size_t* ip, bool is_mul)
 {
     assert(code && ip);
 
+    MakePushPopReg(code, ip, x86_POP, x86_R9);        //pop r9
     MakePushPopReg(code, ip, x86_POP, x86_R8);        //pop r8
-    MakePushPopReg(code, ip, x86_POP, x86_R9);       //pop r9
 
     MakeMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
     MakeMoveRegToReg(code, ip, x86_RAX, x86_R9);            //mov rax, r9
