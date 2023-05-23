@@ -5,14 +5,17 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <math.h>
 
 #include "Translation.h"
 #include "../Stdlib/Stdlib.h"
 #include "../CommandSystem/CommandSystem.h"
+#include "../Stopwatch.h"
 
-const size_t kTestNumber = 1;
+const size_t kTestNumber = 10;
 
 //#define DEBUG
+//#define GET_TIME
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
@@ -52,6 +55,7 @@ void          MakeCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGI
 void          MakePushAllRegs(char* code, size_t* ip);
 void          MakePopAllRegs(char* code, size_t* ip);
 void          MakeCqo(char* code, size_t* ip);
+double        CulcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -80,18 +84,57 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
 
     printf("Running\n");
 
+    #ifdef GET_TIME
+        InitTimer();
+        double times[kTestNumber] = {};
+    #endif
+
     for (int i = 0; i < kTestNumber; i++)
     {
+        #ifdef GET_TIME
+            StartTimer();
+        #endif
+
         #ifdef DEBUG
             printf("i = %d\n", i);
         #endif
         Run(out_code);
+
+        #ifdef GET_TIME
+            StopTimer();
+            times[i] = GetTimerMicroseconds();
+        #endif
     }
+
+    #ifdef GET_TIME
+        CulcAndPrintfStdDeviation(times, kTestNumber);
+    #endif
+}
+
+double CulcAndPrintfStdDeviation(const double data[], const size_t number_meas)
+{
+    double sum = 0;
+    for (int i = 0; i < number_meas; i++)
+        sum += data[i];
+
+    double average       = sum/number_meas;
+    double std_deviation = 0;
+
+    for (int i = 0; i < number_meas; i++)
+    {
+        std_deviation += (data[i] - average) * (data[i] - average);
+    }
+    std_deviation /= (double)(number_meas - 1);
+
+    std_deviation = sqrt(std_deviation);
+    printf("average time  = %lg +- %lg \n", average, std_deviation / average * 100.);
+
+    return std_deviation;
 }
 
 void Run(char* out_code)
 {
-    __asm__(
+    __asm__ volatile(
         ".intel_syntax noprefix\n\t"
         "push rax\n"
         "push rbx\n"
