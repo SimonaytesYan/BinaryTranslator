@@ -1,0 +1,166 @@
+in
+in
+in
+
+push 1000
+mul
+pop rcx
+
+push 1000
+mul
+pop rbx
+
+push 1000
+mul
+pop rax
+
+push rax
+push 0
+je next
+    call GetOneRoot
+next:
+
+call GetTwoRoots
+
+out
+
+end:
+hlt
+
+D:
+    push rbx
+    push rbx
+    mul
+
+    push 1000
+    div
+
+    push rax
+    push rcx
+    mul
+
+    push 4
+    mul
+
+    push 1000
+    div
+
+    sub
+
+    pop rdx
+
+    push rdx
+    push 0
+    
+    jb next4
+        call PrintNoRoots
+    next4:
+
+    push rdx
+
+    ret
+
+GetTwoRoots:
+    call D
+    pop rdx
+
+    push rdx
+    push 1000
+    mul
+    sqrt
+    pop rdx
+    
+    push 0
+    push rbx
+    sub
+
+    pop rbx
+
+    push rbx
+    push rdx
+    add
+
+    push 1000
+    mul
+
+    push rax
+    push 2
+    mul
+
+    div
+    
+    push rdx
+    push 0
+
+    je next3
+        call PrintOneRoot
+    next3:
+
+    push rbx
+    push rdx
+    sub
+    
+    push 1000
+    mul
+
+    push rax
+    push 2
+    mul
+
+    div
+
+    call PrintTwoRoots
+    ret
+
+GetOneRoot:
+
+    push rbx
+    push 0
+    je next1
+        push rcx
+        push 0
+        je next2
+            call PrintInfRoots
+        next2:
+        call PrintNoRoots
+    next1:
+
+    push 0
+    push rcx
+    sub
+    push 1000
+    mul
+
+    push rbx
+    div
+
+    call PrintOneRoot
+
+PrintTwoRoots:
+    push 2
+    out
+    out
+    out
+
+    jmp end
+
+PrintOneRoot:
+    push 1
+    out
+    out
+
+    jmp end
+
+PrintInfRoots:
+    push 0
+    push 1
+    sub
+    out
+    
+    jmp end
+
+PrintNoRoots:
+    push 0
+    out
+    
+    jmp end

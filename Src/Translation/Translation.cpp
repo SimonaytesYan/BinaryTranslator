@@ -13,9 +13,9 @@
 #include "../Stopwatch.h"
 
 const size_t kTestNumber = 10;
-
+const size_t kRunsInTest = 10;
 //#define DEBUG
-//#define GET_TIME
+#define GET_TIME
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
@@ -98,12 +98,16 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
         #ifdef DEBUG
             printf("i = %d\n", i);
         #endif
-        Run(out_code);
+
+        for (int j = 0; j < kRunsInTest; j++)
+            Run(out_code);
 
         #ifdef GET_TIME
             StopTimer();
             times[i] = GetTimerMicroseconds();
         #endif
+
+        fseek(stdin, 0, SEEK_SET);
     }
 
     #ifdef GET_TIME
@@ -127,7 +131,7 @@ double CulcAndPrintfStdDeviation(const double data[], const size_t number_meas)
     std_deviation /= (double)(number_meas - 1);
 
     std_deviation = sqrt(std_deviation);
-    printf("average time  = %lg +- %lg \n", average, std_deviation / average * 100.);
+    printf("average time  = %lg +- %lg \n", average, std_deviation / average);
 
     return std_deviation;
 }
