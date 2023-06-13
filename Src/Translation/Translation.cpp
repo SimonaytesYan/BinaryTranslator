@@ -20,10 +20,12 @@ const size_t kRunsInTest = 1;
 
 struct Context
 {
-    int*  in_code  = nullptr;
-    char* out_code = nullptr;
-    size_t* out_ip = nullptr;
-    size_t* in_ip  = nullptr;
+    int*   in_code  = nullptr;
+    char*  out_code = nullptr;
+    size_t out_ip   = 0;
+    size_t in_ip    = 0;
+
+    char* ram       = nullptr;
 };
 
 //==========================================FUNCTION PROTOTYPES===========================================
@@ -31,40 +33,42 @@ struct Context
 int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
 void Run(char* out_code);
 
-void  EmitAddSub(char* code, size_t* ip, x86_COMMANDS command);
-int   EmitCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
-void  EmitConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, COMMANDS command, char** in_command_out_command_match);
-void  EmitIn(char* code, size_t* ip);
-int   EmitHlt(char* code, size_t* ip);
-void  EmitJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match);
-void  EmitMulDiv(char* code, size_t* ip, bool is_mul);
-void  EmitOut(char* code, size_t* ip);
-int   EmitPop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
-int   EmitPush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram);
-void  EmitReturn(char* out_code, size_t* out_ip);
-void  EmitSqrt(char* code, size_t* ip);
+void  EmitAddSub(Context* ctx, x86_COMMANDS command);
+int   EmitCall(Context* ctx, char** in_command_out_command_match);
+void  EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match);
+void  EmitIn(Context* ctx);
+int   EmitHlt(Context* ctx);
+void  EmitJmp(Context* ctx, char** in_command_out_command_match);
+void  EmitMulDiv(Context* ctx, bool is_mul);
+void  EmitOut(Context* ctx);
+int   EmitPop(Context* ctx);
+int   EmitPush(Context* ctx);
+void  EmitReturn(Context* ctx);
+void  EmitSqrt(Context* ctx);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
-void          CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, size_t* out_ip, char* ram, char** in_command_out_command_match);
-void          EmitMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg);
-void          EmitIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command);
-void          EmitPushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg);
-void          ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg);
-void          PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2);
-void          PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg);
-void          EmitMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from);
+void          CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match);
+void          EmitMovAbsInReg(Context* ctx, size_t number, x86_REGISTERS reg);
+void          EmitIncDec(Context* ctx, x86_REGISTERS reg, x86_COMMANDS command);
+void          EmitPushPopReg(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg);
+void          ParsePushPopArguments(Context* ctx, int* command, unsigned int* number, x86_REGISTERS* reg);
+void          PutPrefixForTwoReg(Context* ctx, x86_REGISTERS *reg1, x86_REGISTERS *reg2);
+void          PutPrefixForOneReg(Context* ctx, x86_REGISTERS* reg);
+void          EmitMoveRegToReg(Context* ctx, x86_REGISTERS reg_to, x86_REGISTERS reg_from);
 void          DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip);
-void          EmitAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
-void          EmitSyscall(char* code, size_t* ip);
-void          NullifyReg(char* code, size_t* ip, x86_REGISTERS reg);
-void          EmitAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command);
-void          EmitJmpToReg(char* code, size_t* ip, x86_REGISTERS reg);
-void          EmitCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2);
-void          EmitPushAllRegs(char* code, size_t* ip);
-void          EmitPopAllRegs(char* code, size_t* ip);
-void          EmitCqo(char* code, size_t* ip);
+void          EmitAddSubRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
+void          EmitSyscall(Context* ctx);
+void          NullifyReg(Context* ctx, x86_REGISTERS reg);
+void          EmitAddSubNumWithReg(Context* ctx, x86_REGISTERS reg, int number, x86_COMMANDS command);
+void          EmitJmpToReg(Context* ctx, x86_REGISTERS reg);
+void          EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2);
+void          EmitPushAllRegs(Context* ctx);
+void          EmitPopAllRegs(Context* ctx);
+void          EmitCqo(Context* ctx);
+
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
+void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
 
 //TODO Структура контекста 
 
@@ -85,17 +89,18 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
     char* ram        = (char*)mmap(NULL, RAM_SIZE,        PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     char* call_stack = (char*)mmap(NULL, CALL_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
+    Context ctx = {};
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram);
 
-    size_t out_ip = 0;
-    EmitMovAbsInReg(out_code, &out_ip, (size_t)call_stack, x86_RSI);    //Put call stack pointer to rsi 
-    EmitMovAbsInReg(out_code, &out_ip, (size_t)ram,        x86_RDI);    //Put ram pointer to rdi
+    EmitMovAbsInReg(&ctx, (size_t)call_stack, x86_RSI);    //Put call stack pointer to rsi 
+    EmitMovAbsInReg(&ctx, (size_t)ram,        x86_RDI);    //Put ram pointer to rdi
     
-    NullifyReg(out_code, &out_ip, x86_RAX);                             //
-    NullifyReg(out_code, &out_ip, x86_RBX);                             //
-    NullifyReg(out_code, &out_ip, x86_RCX);                             //Nullify all user registers
-    NullifyReg(out_code, &out_ip, x86_RDX);                             //
+    NullifyReg(&ctx, x86_RAX);                             //
+    NullifyReg(&ctx, x86_RBX);                             //
+    NullifyReg(&ctx, x86_RCX);                             //Nullify all user registers
+    NullifyReg(&ctx, x86_RDX);                             //
 
-    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[out_ip] , &in_bin_header, ram);
+    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram);
 
     printf("Running\n");
 
@@ -168,20 +173,32 @@ void Run(char* out_code)
     return;
 }
 
+void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram)
+{
+    assert(ctx);
+
+    ctx->in_code  = in_code;
+    ctx->in_ip    = in_ip;
+    ctx->out_code = out_code;
+    ctx->out_ip   = out_ip;
+    ctx->ram      = ram;
+}
+
 int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
 {
-    size_t in_ip  = 0;
-    size_t out_ip = 0;
     char** in_command_out_command_match = (char**)calloc(in_header->commands_number + 1, sizeof(char*));
+
+    Context ctx  = {};
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram);
 
     //==========================FIRST PASS==============================
     printf("First compilation...\n");
-    while (in_ip < in_header->commands_number)
+    while (ctx.in_ip < in_header->commands_number)
     {
-        int cmd = in_code[in_ip];
-        in_command_out_command_match[in_ip] = &out_code[out_ip];
+        int cmd = in_code[ctx.in_ip];
+        in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
 
-        CommandParse((COMMANDS)cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
+        CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match);
 
         #ifdef DEBUG
             printf("cmd    = %d\n", cmd & CMD_MASK);
@@ -189,20 +206,20 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
             DumpInOutCode(in_code, in_ip, out_code, out_ip);            
         #endif
     }
-    in_command_out_command_match[in_ip] = &out_code[out_ip];
-    EmitHlt(out_code, &out_ip);     //end of program
+    in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
+    EmitHlt(&ctx);     //end of program
     //==================================================================
     
     //==========================SECOND PASS==============================
     printf("Second compilation...\n");
-    in_ip  = 0;
-    out_ip = 0;
-    while (in_ip < in_header->commands_number)
+    ctx.in_ip  = 0;
+    ctx.out_ip = 0;
+    while (ctx.in_ip < in_header->commands_number)
     {
-        int cmd = in_code[in_ip];
-        CommandParse((COMMANDS)cmd, in_code, &in_ip, out_code, &out_ip, ram, in_command_out_command_match);
+        int cmd = in_code[ctx.in_ip];
+        CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match);
     }
-    EmitHlt(out_code, &out_ip);     //end of program
+    EmitHlt(&ctx);     //end of program
     //==================================================================
 
 
@@ -215,7 +232,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     return 0;
 }
 
-void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, size_t* out_ip, char* ram, char** in_command_out_command_match)
+void CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match)
 {
     switch ((int)cmd & CMD_MASK)
     {
@@ -225,8 +242,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("ADD\n");
             #endif
 
-            (*in_ip)++;
-            EmitAddSub(out_code, out_ip, x86_ADD);
+            ctx->in_ip++;
+            EmitAddSub(ctx, x86_ADD);
             break;
         }
 
@@ -236,8 +253,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("SUB\n");
             #endif
                 
-            (*in_ip)++;
-            EmitAddSub(out_code, out_ip, x86_SUB);
+            ctx->in_ip++;
+            EmitAddSub(ctx, x86_SUB);
             break;                
         }
 
@@ -247,8 +264,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("MUL\n");
             #endif
                 
-            (*in_ip)++; 
-            EmitMulDiv(out_code, out_ip, true);
+            ctx->in_ip++; 
+            EmitMulDiv(ctx, true);
             break;
         }
 
@@ -258,8 +275,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("DIV\n");
             #endif
                 
-            (*in_ip)++;
-            EmitMulDiv(out_code, out_ip, false);
+            ctx->in_ip++;
+            EmitMulDiv(ctx, false);
             break;
         }
 
@@ -269,8 +286,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("HLT\n");
             #endif
                 
-            (*in_ip)++;
-            EmitHlt(out_code, out_ip);
+            ctx->in_ip++;
+            EmitHlt(ctx);
             break;
         }
 
@@ -280,7 +297,7 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("PUSH\n");
             #endif
             
-            EmitPush(out_code, out_ip, in_code, in_ip, ram);
+            EmitPush(ctx);
             break;
         }
 
@@ -290,7 +307,7 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("POP\n");
             #endif
                 
-            EmitPop(out_code, out_ip, in_code, in_ip, ram);
+            EmitPop(ctx);
             break;
         }
 
@@ -300,8 +317,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("CALL\n");
             #endif
 
-            (*in_ip)++;
-            EmitCall(out_code, out_ip, in_code, in_ip, in_command_out_command_match);
+            ctx->in_ip++;
+            EmitCall(ctx, in_command_out_command_match);
             break;
         }
 
@@ -311,8 +328,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("RET\n");
             #endif
 
-            (*in_ip)++;
-            EmitReturn(out_code, out_ip);
+            ctx->in_ip++;
+            EmitReturn(ctx);
             break;
         }
 
@@ -322,8 +339,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("JMP\n");
             #endif
 
-            (*in_ip)++;
-            EmitJmp(out_code, out_ip, in_code, in_ip, in_command_out_command_match);
+            ctx->in_ip++;
+            EmitJmp(ctx, in_command_out_command_match);
             break;
         }
 
@@ -338,8 +355,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("COND JMP\n");
             #endif
 
-            (*in_ip)++;
-            EmitConditionalJmp(out_code, out_ip, in_code, in_ip, cmd, in_command_out_command_match);
+            ctx->in_ip++;
+            EmitConditionalJmp(ctx, cmd, in_command_out_command_match);
             break;
         }
 
@@ -349,8 +366,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
                 printf("IN\n");
             #endif
             
-            (*in_ip)++;
-            EmitIn(out_code, out_ip);
+            ctx->in_ip++;
+            EmitIn(ctx);
             break;
         }
         case CMD_OUT:
@@ -358,8 +375,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             #ifdef DEBUG
                 printf("OUT\n");
             #endif
-            (*in_ip)++;
-            EmitOut(out_code, out_ip);
+            ctx->in_ip++;
+            EmitOut(ctx);
             break;
         }
 
@@ -368,8 +385,8 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
             #ifdef DEBUG
                 printf("SQRT\n");
             #endif
-            (*in_ip)++;
-            EmitSqrt(out_code, out_ip);
+            ctx->in_ip++;
+            EmitSqrt(ctx);
             break;
         }
 
@@ -378,267 +395,267 @@ void CommandParse(COMMANDS cmd, int* in_code, size_t* in_ip, char* out_code, siz
     }    
 }
 
-void EmitCallReg(char* code, size_t* ip, x86_REGISTERS reg)
+void EmitCallReg(Context* ctx, x86_REGISTERS reg)
 {
     if (reg >= x86_R8)
     {
-        code[(*ip)++] = 0x41;
+        ctx->out_code[ctx->out_ip++] = 0x41;
         reg = (x86_REGISTERS)(reg & 0b111);
     }
 
-    code[(*ip)++] = 0xff;
-    code[(*ip)++] = x86_CALL | reg;
+    ctx->out_code[ctx->out_ip++] = 0xff;
+    ctx->out_code[ctx->out_ip++] = x86_CALL | reg;
 }
 
-void EmitIn(char* code, size_t* ip)
+void EmitIn(Context* ctx)
 {
-    EmitPushAllRegs(code, ip);
+    EmitPushAllRegs(ctx);
 
-    EmitMovAbsInReg(code, ip, (size_t)InputNumber10, x86_RAX);  //
-    EmitCallReg(code, ip, x86_RAX);                             //call OutputNum10
+    EmitMovAbsInReg(ctx, (size_t)InputNumber10, x86_RAX);  //
+    EmitCallReg(ctx, x86_RAX);                             //call OutputNum10
     
-    EmitMoveRegToReg(code, ip, x86_R9, x86_RAX);
+    EmitMoveRegToReg(ctx, x86_R9, x86_RAX);
 
-    EmitPopAllRegs(code, ip);
+    EmitPopAllRegs(ctx);
     
-    EmitPushPopReg(code, ip, x86_PUSH, x86_R9);
+    EmitPushPopReg(ctx, x86_PUSH, x86_R9);
 }
 
-void EmitOut(char* code, size_t* ip)
+void EmitOut(Context* ctx)
 {
-    EmitPushPopReg(code, ip, x86_POP, x86_R10);
-    EmitPushAllRegs(code, ip);
+    EmitPushPopReg(ctx, x86_POP, x86_R10);
+    EmitPushAllRegs(ctx);
 
-    EmitMoveRegToReg(code, ip, x86_RDI, x86_R10);               //argument for OutNumber10
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R10);               //argument for OutNumber10
 
-    EmitMovAbsInReg(code, ip, (size_t)OutputNumber10, x86_RAX); //
-    EmitCallReg(code, ip, x86_RAX);                             //call OutputNum10
+    EmitMovAbsInReg(ctx, (size_t)OutputNumber10, x86_RAX); //
+    EmitCallReg(ctx, x86_RAX);                             //call OutputNum10
 
-    EmitPopAllRegs(code, ip);
+    EmitPopAllRegs(ctx);
 }
 
-void EmitJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
+void EmitJmp(Context* ctx, char** in_command_out_command_match)
 {
-    size_t in_code_label = in_code[(*in_ip)++];
+    size_t in_code_label = (int)ctx->in_code[ctx->in_ip++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    EmitMovAbsInReg(out_code, out_ip, label, x86_R8);       //movabs r8, label
-    EmitJmpToReg(out_code, out_ip, x86_R8);                 //jmp r8
+    EmitMovAbsInReg(ctx, label, x86_R8);       //movabs r8, label
+    EmitJmpToReg(ctx, x86_R8);                 //jmp r8
 }
 
-void EmitConditionalJmp(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, COMMANDS command, char** in_command_out_command_match)
+void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
 {
-    size_t in_code_label = in_code[(*in_ip)++];
+    size_t in_code_label = ctx->in_code[ctx->in_ip++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    EmitPushPopReg(out_code, out_ip, x86_POP, x86_R9);  //pop r9
-    EmitPushPopReg(out_code, out_ip, x86_POP, x86_R8);  //pop r8
+    EmitPushPopReg(ctx, x86_POP, x86_R9);  //pop r9
+    EmitPushPopReg(ctx, x86_POP, x86_R8);  //pop r8
 
-    EmitCmpTwoReg(out_code, out_ip, x86_R8, x86_R9);    //cmp r8, r9
+    EmitCmpTwoReg(ctx, x86_R8, x86_R9);    //cmp r8, r9
 
     x86_COMMANDS jmp_cond = ConditionalJmpConversion(command);
     long long offset = 0;
-    if (label < ((size_t)&out_code[*out_ip]))
-        offset = (long long)label - ((long long)&out_code[*out_ip]);
+    if (label < ((size_t)&(ctx->out_code[ctx->out_ip])))
+        offset = (long long)label - ((long long)&ctx->out_code[ctx->out_ip]);
     else
-        offset = (long long)label - (long long)((size_t)&out_code[*out_ip] + 2 + sizeof(int));
+        offset = (long long)label - (long long)((size_t)ctx->out_code[ctx->out_ip] + 2 + sizeof(int));
 
-    out_code[(*out_ip)++] = 0xf;
-    out_code[(*out_ip)++] = jmp_cond;
+    ctx->out_code[ctx->out_ip++] = 0xf;
+    ctx->out_code[ctx->out_ip++] = jmp_cond;
 
-    memcpy(&out_code[*out_ip], &offset, sizeof(int));
-    (*out_ip) += 4;
+    memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
+    ctx->out_ip += 4;
 }
 
-void EmitAddSub(char* code, size_t* ip, x86_COMMANDS command)
+void EmitAddSub(Context* ctx, x86_COMMANDS command)
 {
-    assert(code && ip);
+    assert(ctx);
 
-    EmitPushPopReg(code, ip, x86_POP, x86_R9);    //pop r9
-    EmitPushPopReg(code, ip, x86_POP, x86_R8);    //pop r8
+    EmitPushPopReg(ctx, x86_POP, x86_R9);    //pop r9
+    EmitPushPopReg(ctx, x86_POP, x86_R8);    //pop r8
     
-    EmitAddSubRegs(code, ip, command, x86_R8, x86_R9);  //add(sub) r8, r9
+    EmitAddSubRegs(ctx, command, x86_R8, x86_R9);  //add(sub) r8, r9
 
-    EmitPushPopReg(code, ip, x86_PUSH, x86_R8);  //push r8
+    EmitPushPopReg(ctx, x86_PUSH, x86_R8);  //push r8
 }
 
 //!
 //!is_mul = true  if mul
 //!       = false if div
 //!
-void EmitMulDiv(char* code, size_t* ip, bool is_mul)
+void EmitMulDiv(Context* ctx, bool is_mul)
 {
-    assert(code && ip);
+    assert(ctx);
 
-    EmitPushPopReg(code, ip, x86_POP, x86_R8);        // pop r8
-    EmitPushPopReg(code, ip, x86_POP, x86_R9);        // pop r9
+    EmitPushPopReg(ctx, x86_POP, x86_R8);        // pop r8
+    EmitPushPopReg(ctx, x86_POP, x86_R9);        // pop r9
 
-    EmitMoveRegToReg(code, ip, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
-    EmitMoveRegToReg(code, ip, x86_R11, x86_RDX);           // save rdx value to r11
+    EmitMoveRegToReg(ctx, x86_R10, x86_RAX);           // mov r10, rax ;put old rax value in r10
+    EmitMoveRegToReg(ctx, x86_R11, x86_RDX);           // save rdx value to r11
     
-    EmitMoveRegToReg(code, ip, x86_RAX, x86_R9);            // mov rax, r9
+    EmitMoveRegToReg(ctx, x86_RAX, x86_R9);            // mov rax, r9
 
-    EmitCqo(code, ip);                                      //cqo 
+    EmitCqo(ctx);                                      //cqo 
 
     x86_REGISTERS reg = x86_R8;
-    PutPrefixForOneReg(code, ip, &reg);
+    PutPrefixForOneReg(ctx, &reg);
 
-    code[(*ip)++] = x86_MUL;
+    ctx->out_code[ctx->out_ip++] = x86_MUL;
     if (is_mul)
-        code[(*ip)++] = x86_MUL_WITH_REG | x86_R8;
+        ctx->out_code[ctx->out_ip++] = x86_MUL_WITH_REG | x86_R8;
     else
-        code[(*ip)++] = x86_DIV_WITH_REG | x86_R8;
+        ctx->out_code[ctx->out_ip++] = x86_DIV_WITH_REG | x86_R8;
 
-    EmitPushPopReg  (code, ip, x86_PUSH, x86_RAX);          // push rax
-    EmitMoveRegToReg(code, ip, x86_RAX, x86_R10);           // mov r10, rax  ;recover rax
-    EmitMoveRegToReg(code, ip, x86_RDX, x86_R11);           // recover rdx
+    EmitPushPopReg  (ctx, x86_PUSH, x86_RAX);          // push rax
+    EmitMoveRegToReg(ctx, x86_RAX, x86_R10);           // mov r10, rax  ;recover rax
+    EmitMoveRegToReg(ctx, x86_RDX, x86_R11);           // recover rdx
 }
 
-int EmitPush(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
+int EmitPush(Context* ctx)
 {
     int           command = 0;
     unsigned int  number  = 0;
     x86_REGISTERS reg     = x86_RAX;
-    ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
+    ParsePushPopArguments(ctx, &command, &number, &reg);
 
     if (command & ARG_MEM)
     {
-        out_code[(*out_ip)++] = x86_PUSH_MEM;
+        ctx->out_code[ctx->out_ip++] = x86_PUSH_MEM;
 
         if (command & ARG_REG)
         {
-            out_code[(*out_ip)++] = 0xb4;                 // push ...
-            out_code[(*out_ip)++] = reg | x86_RDI << 3;   //      ...[reg + rdi] ([reg + rdi], because rdi - pointer to ram for this program)
+            ctx->out_code[ctx->out_ip++] = 0xb4;                 // push ...
+            ctx->out_code[ctx->out_ip++] = reg | x86_RDI << 3;   //      ...[reg + rdi] ([reg + rdi], because rdi - pointer to ram for this program)
         }
         else if (command & ARG_NUM)
         {
             number *= sizeof(size_t);
-            out_code[(*out_ip)++] = 0xb0 | x86_RDI;
+            ctx->out_code[ctx->out_ip++] = 0xb0 | x86_RDI;
         }
 
-        memcpy(&out_code[*out_ip], &number, sizeof(int));
-        *out_ip += sizeof(int);
+        memcpy(&ctx->out_code[ctx->out_ip], &number, sizeof(int));
+        ctx->out_ip += sizeof(int);
     }
     else if (command & ARG_REG)
     {
-        EmitPushPopReg(out_code, out_ip, x86_PUSH, reg);
+        EmitPushPopReg(ctx, x86_PUSH, reg);
     }
     else if (command & ARG_NUM)
     {
-        out_code[(*out_ip)++] = x86_PUSH_N;
+        ctx->out_code[ctx->out_ip++] = x86_PUSH_N;
 
-        memcpy(&out_code[*out_ip], &number, sizeof(int));   //TODO обёртка
-        *out_ip += sizeof(int);                             //Put number in 4 bytes
+        memcpy(&ctx->out_code[ctx->out_ip], &number, sizeof(int));   //TODO обёртка
+        ctx->out_ip += sizeof(int);                             //Put number in 4 bytes
     }
     
     return 0;
 }
 
-int EmitPop(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char* ram)
+int EmitPop(Context* ctx)
 {
     int           command = 0;
     unsigned int  number  = 0;
     x86_REGISTERS reg     = x86_RAX;
 
-    ParsePushPopArguments(in_code, in_ip, &command, &number, &reg);
+    ParsePushPopArguments(ctx, &command, &number, &reg);
 
     if (command & ARG_MEM)
     {
-        out_code[(*out_ip)++] = x86_POP_MEM;
+        ctx->out_code[ctx->out_ip++] = x86_POP_MEM;
 
         if (command & ARG_REG)
         {
-            out_code[(*out_ip)++] = 0x84;
-            out_code[(*out_ip)]   = x86_RDI << 3; // Dont increment out_ip, because we should make or this byte with register.
+            ctx->out_code[ctx->out_ip++] = 0x84;
+            ctx->out_code[ctx->out_ip]   = x86_RDI << 3; // Dont increment out_ip, because we should make or this byte with register.
                                                   // Program will do it later
         }
         else if (command & ARG_NUM)
         {
             number *= sizeof(size_t);
-            out_code[(*out_ip)++] = 0x80 | x86_RDI;
+            ctx->out_code[ctx->out_ip++] = 0x80 | x86_RDI;
         }
 
     }
     if (command & ARG_REG)
     {
         if (!(command & ARG_MEM))
-            out_code[(*out_ip)] = x86_POP;
-        out_code[(*out_ip)++] |= (char)reg;
+            ctx->out_code[ctx->out_ip] = x86_POP;
+        ctx->out_code[ctx->out_ip++] |= (char)reg;
     }
     if (command & ARG_NUM)
     {
-        memcpy(&out_code[*out_ip], &number, sizeof(int));   //
-        *out_ip += sizeof(int);                             //Put number in 4 bytes
+        memcpy(&ctx->out_code[ctx->out_ip], &number, sizeof(int));   //
+        ctx->out_ip += sizeof(int);                             //Put number in 4 bytes
     }
 
     return 0;
 }
 
-void EmitReturn(char* code, size_t* ip)
+void EmitReturn(Context* ctx)
 {
-    EmitAddSubNumWithReg(code, ip, x86_RSI, 8, x86_SUB); // sub rsi, 8
+    EmitAddSubNumWithReg(ctx, x86_RSI, 8, x86_SUB); // sub rsi, 8
 
-    code[(*ip)++] = 0xff;                                //
-    code[(*ip)++] = 0x20 | x86_RSI;                      //jmp [rsi]
+    ctx->out_code[ctx->out_ip++] = 0xff;                                //
+    ctx->out_code[ctx->out_ip++] = 0x20 | x86_RSI;                      //jmp [rsi]
 }
 
-void EmitJmpToReg(char* code, size_t* ip, x86_REGISTERS reg)
+void EmitJmpToReg(Context* ctx, x86_REGISTERS reg)
 {
     if (reg >= x86_R8)
     {
-        code[(*ip)++] = 0x41;
+        ctx->out_code[ctx->out_ip++] = 0x41;
         reg = (x86_REGISTERS)(reg & 0b111);
     }
     
-    code[(*ip)++] = 0xff;                                           //
-    code[(*ip)++] = x86_JMP | reg;                                  //jmp rax
+    ctx->out_code[ctx->out_ip++] = 0xff;                                           //
+    ctx->out_code[ctx->out_ip++] = x86_JMP | reg;                                  //jmp rax
 }
 
-int EmitCall(char* out_code, size_t* out_ip, int* in_code, size_t* in_ip, char** in_command_out_command_match)
+int EmitCall(Context* ctx, char** in_command_out_command_match)
 {
-    size_t in_code_label = in_code[(*in_ip)++];
+    size_t in_code_label = ctx->in_code[ctx->in_ip++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    EmitMovAbsInReg(out_code, out_ip, 0, x86_R8);           //movabs r8, return_address (return_address will be put here later) <-------
+    EmitMovAbsInReg(ctx, 0, x86_R8);           //movabs r8, return_address (return_address will be put here later) <-------
                                                                                                                         //             |
-    size_t* ret_address = (size_t*)&out_code[(*out_ip) - 8];                                                            //             |
+    size_t* ret_address = (size_t*)&ctx->out_code[ctx->out_ip - 8];                                                            //             |
                                                                                                                         //             |
     x86_REGISTERS reg2 = x86_R8;                            //                                                          //             |
     x86_REGISTERS reg1 = x86_RSI;                           //                                                          //             |
-    PutPrefixForTwoReg(out_code, out_ip, &reg1, &reg2);     //                                                          //             |
-    out_code[(*out_ip)++] = x86_MOV;                        //                                                          //             |
-    out_code[(*out_ip)++] = (char)(reg1 | (reg2 << 3));     //mov [rsi], r8                                             //             |
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);     //                                                          //             |
+    ctx->out_code[ctx->out_ip++] = x86_MOV;                        //                                                          //             |
+    ctx->out_code[ctx->out_ip++] = (char)(reg1 | (reg2 << 3));     //mov [rsi], r8                                             //             |
                                                                                                                         //             |
-    EmitAddSubNumWithReg(out_code, out_ip, x86_RSI, 8, x86_ADD);// add rsi, 8                                           //             |
-    EmitMovAbsInReg(out_code, out_ip, label, x86_R8);           //movabs r8, label                                      //             |
-    EmitJmpToReg(out_code, out_ip, x86_R8);                     //jmp r8                                                //             |
+    EmitAddSubNumWithReg(ctx, x86_RSI, 8, x86_ADD);// add rsi, 8                                           //             |
+    EmitMovAbsInReg(ctx, label, x86_R8);           //movabs r8, label                                      //             |
+    EmitJmpToReg(ctx, x86_R8);                     //jmp r8                                                //             |
                                                                                                                         //             |
-    size_t curr_address = (size_t)&out_code[*out_ip];     //put return_address --------------------------------------------------------|
+    size_t curr_address = (size_t)&ctx->out_code[ctx->out_ip];     //put return_address --------------------------------------------------------|
     memcpy(ret_address, &curr_address, sizeof(size_t));
 
     return 0;
 }
 
-int EmitHlt(char* code, size_t* ip)
+int EmitHlt(Context* ctx)
 {
-    code[(*ip)++] = x86_RET;
+    ctx->out_code[ctx->out_ip++] = x86_RET;
     return 0;
 }
 
-void EmitSqrt(char* code, size_t* ip)
+void EmitSqrt(Context* ctx)
 {
-    EmitPushPopReg(code, ip, x86_POP, x86_R10);
-    EmitPushAllRegs(code, ip);
+    EmitPushPopReg(ctx, x86_POP, x86_R10);
+    EmitPushAllRegs(ctx);
 
-    EmitMoveRegToReg(code, ip, x86_RDI, x86_R10);               //argument for sqrt
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R10);               //argument for sqrt
 
-    EmitMovAbsInReg(code, ip, (size_t)SqrtInt, x86_RAX);        //
-    EmitCallReg(code, ip, x86_RAX);                             //call sqrt
+    EmitMovAbsInReg(ctx, (size_t)SqrtInt, x86_RAX);        //
+    EmitCallReg(ctx, x86_RAX);                             //call sqrt
 
-    EmitMoveRegToReg(code, ip, x86_R10, x86_RAX);
-    EmitPopAllRegs(code, ip);
+    EmitMoveRegToReg(ctx, x86_R10, x86_RAX);
+    EmitPopAllRegs(ctx);
 
-    EmitPushPopReg(code, ip, x86_PUSH, x86_R10);
+    EmitPushPopReg(ctx, x86_PUSH, x86_R10);
 }
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
@@ -660,24 +677,24 @@ x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg)
     return x86_ERROR_REG;
 }
 
-void EmitPushAllRegs(char* code, size_t* ip)
+void EmitPushAllRegs(Context* ctx)
 {
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RAX);
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RBX);
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RCX);
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RDX);
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RSI);
-    EmitPushPopReg(code, ip, x86_PUSH, x86_RDI);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RAX);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RBX);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RCX);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RDX);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RSI);
+    EmitPushPopReg(ctx, x86_PUSH, x86_RDI);
 }
 
-void EmitPopAllRegs(char* code, size_t* ip)
+void EmitPopAllRegs(Context* ctx)
 {
-    EmitPushPopReg(code, ip, x86_POP, x86_RDI);
-    EmitPushPopReg(code, ip, x86_POP, x86_RSI);
-    EmitPushPopReg(code, ip, x86_POP, x86_RDX);
-    EmitPushPopReg(code, ip, x86_POP, x86_RCX);
-    EmitPushPopReg(code, ip, x86_POP, x86_RBX);
-    EmitPushPopReg(code, ip, x86_POP, x86_RAX);
+    EmitPushPopReg(ctx, x86_POP, x86_RDI);
+    EmitPushPopReg(ctx, x86_POP, x86_RSI);
+    EmitPushPopReg(ctx, x86_POP, x86_RDX);
+    EmitPushPopReg(ctx, x86_POP, x86_RCX);
+    EmitPushPopReg(ctx, x86_POP, x86_RBX);
+    EmitPushPopReg(ctx, x86_POP, x86_RAX);
 }
 
 void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
@@ -696,12 +713,12 @@ void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
     printf("\n\n");
 }
 
-void EmitCmpTwoReg(char* code, size_t* ip, x86_REGISTERS reg1, x86_REGISTERS reg2)
+void EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2)
 {
-    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);
 
-    code[(*ip)++] = x86_CMP;
-    code[(*ip)++] = 0xc0 | reg1 | (reg2 << 3);
+    ctx->out_code[ctx->out_ip++] = x86_CMP;
+    ctx->out_code[ctx->out_ip++] = 0xc0 | reg1 | (reg2 << 3);
 }
 
 x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
@@ -726,123 +743,123 @@ x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
     }
 }
 
-void EmitSyscall(char* code, size_t* ip)
+void EmitSyscall(Context* ctx)
 {
-    code[(*ip)++] = 0x0F;
-    code[(*ip)++] = 0x05;
+    ctx->out_code[ctx->out_ip++] = 0x0F;
+    ctx->out_code[ctx->out_ip++] = 0x05;
 }
 
-void EmitAddSubNumWithReg(char* code, size_t* ip, x86_REGISTERS reg, int number, x86_COMMANDS command)
+void EmitAddSubNumWithReg(Context* ctx, x86_REGISTERS reg, int number, x86_COMMANDS command)
 {
-    PutPrefixForOneReg(code, ip, &reg);
+    PutPrefixForOneReg(ctx, &reg);
 
-    code[(*ip)++] = 0x81;
+    ctx->out_code[ctx->out_ip++] = 0x81;
 
     if (command == x86_ADD)
-        code[(*ip)++] = 0xc0 | reg;
+        ctx->out_code[ctx->out_ip++] = 0xc0 | reg;
     else
-        code[(*ip)++] = 0xe8 | reg;
+        ctx->out_code[ctx->out_ip++] = 0xe8 | reg;
 
-    memcpy(&code[*ip], &number, sizeof(int));
-    *ip += sizeof(int);
+    memcpy(&ctx->out_code[ctx->out_ip], &number, sizeof(int));
+    ctx->out_ip += sizeof(int);
 }
 
-void NullifyReg(char* code, size_t* ip, x86_REGISTERS reg)
+void NullifyReg(Context* ctx, x86_REGISTERS reg)
 {
     x86_REGISTERS reg1 = reg;
     x86_REGISTERS reg2 = reg;
-    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);
 
-    code[(*ip)++] = x86_XOR;
-    code[(*ip)++] = 0xc0 | (reg << 3) | reg;    
+    ctx->out_code[ctx->out_ip++] = x86_XOR;
+    ctx->out_code[ctx->out_ip++] = 0xc0 | (reg << 3) | reg;    
 }
 
-void EmitAddSubRegs(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
+void EmitAddSubRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
 {
-    PutPrefixForTwoReg(code, ip, &reg1, &reg2);
-    code[(*ip)++] = command;
-    code[(*ip)++] = 0xc0 | reg1 | (reg2 << 3);
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);
+    ctx->out_code[ctx->out_ip++] = command;
+    ctx->out_code[ctx->out_ip++] = 0xc0 | reg1 | (reg2 << 3);
 }
 
 //!
 //!Function parse push and pop commands in to command opcode + number(if any) + register(if any)
 //!and move in_ip to the next command
 //!
-void ParsePushPopArguments(int* in_code, size_t* in_ip, int* command, unsigned int* number, x86_REGISTERS* reg)
+void ParsePushPopArguments(Context* ctx, int* command, unsigned int* number, x86_REGISTERS* reg)
 {
-    *command = in_code[(*in_ip)++];
+    *command = ctx->in_code[ctx->in_ip++];
     if (*command & ARG_NUM)
-        *number  = in_code[(*in_ip)++];
+        *number  = ctx->in_code[ctx->in_ip++];
     if (*command & ARG_REG)
-        *reg     = ConvertMyRegInx86Reg((REGISTERS)in_code[(*in_ip)++]);
+        *reg     = ConvertMyRegInx86Reg((REGISTERS)ctx->in_code[ctx->in_ip++]);
 }
 
-void PutPrefixForOneReg(char* code, size_t* ip, x86_REGISTERS* reg)
+void PutPrefixForOneReg(Context* ctx, x86_REGISTERS* reg)
 {
-    code[(*ip)] = 0x48;
+    ctx->out_code[ctx->out_ip] = 0x48;
     if (*reg >= x86_R8)
     {
-        code[(*ip)] |= 0b1;
+        ctx->out_code[ctx->out_ip] |= 0b1;
         *reg = (x86_REGISTERS)(*reg & 0b111);
     }
-    (*ip)++;
+    ctx->out_ip++;
 }
 
-void PutPrefixForTwoReg(char* code, size_t* ip, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
+void PutPrefixForTwoReg(Context* ctx, x86_REGISTERS *reg1, x86_REGISTERS *reg2)
 {
-    code[(*ip)] = 0x48;
+    ctx->out_code[ctx->out_ip] = 0x48;
     if (*reg1 >= x86_R8)
     {
-        code[(*ip)] |= 0b1;
+        ctx->out_code[ctx->out_ip] |= 0b1;
         *reg1 = (x86_REGISTERS)(*reg1 & 0b111);
     }
     if (*reg2 >= x86_R8)
     {
-        code[(*ip)] |= 0b100;
+        ctx->out_code[ctx->out_ip] |= 0b100;
         *reg2 = (x86_REGISTERS)(*reg2 & 0b111);        
     }
-    (*ip)++;
+    ctx->out_ip++;
 }
 
-void EmitMoveRegToReg(char* code, size_t* ip, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
+void EmitMoveRegToReg(Context* ctx, x86_REGISTERS reg_to, x86_REGISTERS reg_from)
 {
-    PutPrefixForTwoReg(code, ip, &reg_to, &reg_from);
+    PutPrefixForTwoReg(ctx, &reg_to, &reg_from);
 
-    code[(*ip)++] = x86_MOV;
-    code[(*ip)++] = 0xc0 | reg_to | (reg_from << 3);
+    ctx->out_code[ctx->out_ip++] = x86_MOV;
+    ctx->out_code[ctx->out_ip++] = 0xc0 | reg_to | (reg_from << 3);
 }
 
-void EmitPushPopReg(char* code, size_t* ip, x86_COMMANDS command, x86_REGISTERS reg)
+void EmitPushPopReg(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg)
 {
     if (reg >= x86_R8)
     {
-        code[(*ip)++] = 0x41;
+        ctx->out_code[ctx->out_ip++] = 0x41;
         reg = (x86_REGISTERS)(reg & 0b111);
     }
-    code[(*ip)++] = (char)command | (char)reg;
+    ctx->out_code[ctx->out_ip++] = (char)command | (char)reg;
 }
 
-void EmitMovAbsInReg(char* code, size_t* ip, size_t number, x86_REGISTERS reg)
+void EmitMovAbsInReg(Context* ctx, size_t number, x86_REGISTERS reg)
 {
-    PutPrefixForOneReg(code, ip, &reg);
+    PutPrefixForOneReg(ctx, &reg);
     
-    code[(*ip)++] = x86_MOV_ABS | reg;                      //
-    memcpy(&code[*ip], &number, sizeof(size_t));            //
-    *ip += sizeof(size_t);                                  //mov reg, number
+    ctx->out_code[ctx->out_ip++] = x86_MOV_ABS | reg;               //
+    memcpy(&ctx->out_code[ctx->out_ip], &number, sizeof(size_t));   //
+    ctx->out_ip += sizeof(size_t);                                  //mov reg, number
 }
 
-void EmitIncDec(char* code, size_t* ip, x86_REGISTERS reg, x86_COMMANDS command)
+void EmitIncDec(Context* ctx, x86_REGISTERS reg, x86_COMMANDS command)
 {
-    PutPrefixForOneReg(code, ip, &reg);
+    PutPrefixForOneReg(ctx, &reg);
     
-    code[(*ip)++] = 0xff;
-    code[(*ip)++] = command | reg;
+    ctx->out_code[ctx->out_ip++] = 0xff;
+    ctx->out_code[ctx->out_ip++] = command | reg;
 }
 
-void EmitCqo(char* code, size_t* ip)
+void EmitCqo(Context* ctx)
 {
-    code[(*ip)++] = 0x48;
-    code[(*ip)++] = 0x99; 
+    ctx->out_code[ctx->out_ip++] = 0x48;
+    ctx->out_code[ctx->out_ip++] = 0x99; 
 }
 
 double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas)
