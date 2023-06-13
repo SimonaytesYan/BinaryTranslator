@@ -18,6 +18,14 @@ const size_t kRunsInTest = 1;
 //#define DEBUG
 #define GET_TIME
 
+struct Context
+{
+    int*  in_code  = nullptr;
+    char* out_code = nullptr;
+    size_t* out_ip = nullptr;
+    size_t* in_ip  = nullptr;
+};
+
 //==========================================FUNCTION PROTOTYPES===========================================
 
 int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
@@ -58,7 +66,7 @@ void          EmitPopAllRegs(char* code, size_t* ip);
 void          EmitCqo(char* code, size_t* ip);
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 
-//TODO Струкртура контекста 
+//TODO Структура контекста 
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -120,28 +128,6 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
     #ifdef GET_TIME
         CalcAndPrintfStdDeviation(times, kTestNumber);
     #endif
-}
-
-double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas)
-{
-    double sum = 0;
-    for (int i = 0; i < number_meas; i++)
-        sum += data[i];
-
-    double average       = sum/number_meas;
-    double std_deviation = 0;
-
-    for (int i = 0; i < number_meas; i++)
-    {
-        std_deviation += (data[i] - average) * (data[i] - average);
-    }
-    if (number_meas != 1)
-        std_deviation /= (double)(number_meas - 1);
-
-    std_deviation = sqrt(std_deviation);
-    printf("average time  = %lg +- %lg \n", average, std_deviation / average);
-
-    return std_deviation;
 }
 
 void Run(char* out_code)
@@ -857,4 +843,28 @@ void EmitCqo(char* code, size_t* ip)
 {
     code[(*ip)++] = 0x48;
     code[(*ip)++] = 0x99; 
+}
+
+double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas)
+{
+    assert(data);
+    
+    double sum = 0;
+    for (int i = 0; i < number_meas; i++)
+        sum += data[i];
+
+    double average       = sum/number_meas;
+    double std_deviation = 0;
+
+    for (int i = 0; i < number_meas; i++)
+    {
+        std_deviation += (data[i] - average) * (data[i] - average);
+    }
+    if (number_meas != 1)
+        std_deviation /= (double)(number_meas - 1);
+
+    std_deviation = sqrt(std_deviation);
+    printf("average time  = %lg +- %lg \n", average, std_deviation / average);
+
+    return std_deviation;
 }
