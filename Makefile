@@ -21,6 +21,13 @@ stdlib_debug:
 stdlib_release:
 	g++ -c $(RELEASE) Src/Stdlib/Stdlib.cpp -o Obj/Stdlib.o
 
+run_lang_with_proc:
+	cd Src/MyLanguage && make run
+
+run_lang_with_jit:
+	cd Src/MyLanguage && make compile
+	./Exe/Translate Src/MyLanguage/Libs/CPU/a.sy
+
 create_dir:
 	mkdir Exe
 	mkDir Obj
