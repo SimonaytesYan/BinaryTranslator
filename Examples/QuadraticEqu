@@ -2,29 +2,55 @@ in
 in
 in
 
-push 1000
-mul
-pop rcx
+pop [0]
+pop [1]
+pop [2]
 
-push 1000
-mul
-pop rbx
+push 1
+pop [3]
 
-push 1000
-mul
-pop rax
+loop:
+    push [3]
+    push 1
+    sub
+    pop [3]
 
-push rax
-push 0
-je next
-    call GetOneRoot
-next:
+    push [3]
+    push 0
 
-call GetTwoRoots
+    jae end_all
 
-out
+    push [0]
+    push [1]
+    push [2]
 
-end:
+    push 1000
+    mul
+    pop rcx
+
+    push 1000
+    mul
+    pop rbx
+
+    push 1000
+    mul
+    pop rax
+
+    push rax
+    push 0
+    je next
+        call GetOneRoot
+    next:
+
+    call GetTwoRoots
+
+    pop rdx
+
+    end:
+
+    jmp
+
+end_all:
 hlt
 
 D:
@@ -138,16 +164,17 @@ GetOneRoot:
 
 PrintTwoRoots:
     push 2
-    out
-    out
-    out
+
+    pop rdx
+    pop rdx
+    pop rdx
 
     jmp end
 
 PrintOneRoot:
     push 1
-    out
-    out
+    pop rdx
+    pop rdx
 
     jmp end
 
@@ -155,12 +182,13 @@ PrintInfRoots:
     push 0
     push 1
     sub
-    out
+    pop rdx
     
     jmp end
 
 PrintNoRoots:
     push 0
-    out
-    
+    pop rdx
+
     jmp end
+    

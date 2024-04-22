@@ -15,7 +15,7 @@
 const size_t kTestNumber = 1;
 const size_t kRunsInTest = 1;
 
-//#define DEBUG
+#define DEBUG
 #define GET_TIME
 
 struct Context
@@ -70,15 +70,11 @@ void          EmitCqo(Context* ctx);
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
 
-//TODO Структура контекста 
-
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
 void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header)
 {
     assert(in_bin_filepath);
-
-    //TODO asserts
 
     printf("Translating...\n");
     int in_bin_fd = open(in_bin_filepath, O_RDWR);
@@ -203,7 +199,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
         #ifdef DEBUG
             printf("cmd    = %d\n", cmd & CMD_MASK);
             printf("cmd    = %b\n", cmd);
-            DumpInOutCode(in_code, in_ip, out_code, out_ip);            
+            //DumpInOutCode(ctx.in_code, ctx.in_ip, ctx.out_code, ctx.out_ip);            
         #endif
     }
     in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
@@ -224,7 +220,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
 
 
     #ifdef DEBUG
-        DumpInOutCode(in_code, in_ip, out_code, out_ip);    
+        DumpInOutCode(ctx.in_code, ctx.in_ip, ctx.out_code, ctx.out_ip);    
     #endif
 
     free(in_command_out_command_match);
@@ -448,20 +444,27 @@ void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_co
     size_t in_code_label = ctx->in_code[ctx->in_ip++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
+    #ifdef DEBUG
+        printf("in_code_label = %zu\n", in_code_label);
+        printf("label = %zu\n", label);
+    #endif
+
     EmitPushPopReg(ctx, x86_POP, x86_R9);  //pop r9
     EmitPushPopReg(ctx, x86_POP, x86_R8);  //pop r8
 
     EmitCmpTwoReg(ctx, x86_R8, x86_R9);    //cmp r8, r9
 
-    x86_COMMANDS jmp_cond = ConditionalJmpConversion(command);
     long long offset = 0;
-    if (label < ((size_t)&(ctx->out_code[ctx->out_ip])))
-        offset = (long long)label - ((long long)&ctx->out_code[ctx->out_ip]);
-    else
-        offset = (long long)label - (long long)((size_t)ctx->out_code[ctx->out_ip] + 2 + sizeof(int));
+    if (label != 0)                                             //unknown label for now (in first compilation pass)
+    {
+        if (label < ((size_t)&(ctx->out_code[ctx->out_ip])))
+            offset = (long long)label - ((long long)&ctx->out_code[ctx->out_ip]);
+        else
+            offset = (long long)label - (long long)((size_t)ctx->out_code[ctx->out_ip] + 2 + sizeof(int));
+    }
 
     ctx->out_code[ctx->out_ip++] = 0xf;
-    ctx->out_code[ctx->out_ip++] = jmp_cond;
+    ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
 
     memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
     ctx->out_ip += 4;
