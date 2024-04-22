@@ -3,7 +3,6 @@
 *.
 *.png
 Exe
-Src/Libs/MyLanguage
 Tests
 perf.data
 perf.data.old
