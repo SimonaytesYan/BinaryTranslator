@@ -28,6 +28,9 @@ run_lang_with_jit:
 	cd Src/MyLanguage && make compile
 	./Exe/Translate Src/MyLanguage/Libs/CPU/a.sy
 
+run: debug
+	./Exe/Translate a.sy
+
 create_dir:
 	mkdir Exe
 	mkDir Obj

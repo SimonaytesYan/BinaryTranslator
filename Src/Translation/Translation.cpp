@@ -48,7 +48,7 @@ void  EmitSqrt(Context* ctx);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
-void          CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match);
+int           CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match);
 void          EmitMovAbsInReg(Context* ctx, size_t number, x86_REGISTERS reg);
 void          EmitIncDec(Context* ctx, x86_REGISTERS reg, x86_COMMANDS command);
 void          EmitPushPopReg(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg);
@@ -193,14 +193,16 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     {
         int cmd = in_code[ctx.in_ip];
         in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
-
-        CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match);
-
+        
         #ifdef DEBUG
-            printf("cmd    = %d\n", cmd & CMD_MASK);
-            printf("cmd    = %b\n", cmd);
-            //DumpInOutCode(ctx.in_code, ctx.in_ip, ctx.out_code, ctx.out_ip);            
+            printf("cmd = %d\n", cmd & CMD_MASK);
+            printf("cmd = %b\n", cmd);
         #endif
+
+        assert(CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match));
+        #ifdef DEBUG
+            DumpInOutCode(ctx.in_code, ctx.in_ip, ctx.out_code, ctx.out_ip); 
+        #endif           
     }
     in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
     EmitHlt(&ctx);     //end of program
@@ -228,9 +230,10 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     return 0;
 }
 
-void CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match)
+int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match)
 {
-    switch ((int)cmd & CMD_MASK)
+    const int cmd_mask_command = (int)cmd & CMD_MASK;
+    switch (cmd_mask_command)
     {
         case CMD_ADD:
         {
@@ -386,9 +389,17 @@ void CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_matc
             break;
         }
 
+        // case CMD_IS_EQ:
+        // {
+            // break;
+        // }
+
         default:
-            break;
+            printf("Unknown instruction %d(%b)\n", cmd_mask_command, cmd_mask_command);
+            return -1;
     }    
+
+    return 0;
 }
 
 void EmitCallReg(Context* ctx, x86_REGISTERS reg)
