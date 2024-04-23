@@ -389,10 +389,45 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
             break;
         }
 
-        // case CMD_IS_EQ:
-        // {
-            // break;
-        // }
+        case CMD_IS_EQ:
+        {
+            EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
+            EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r9
+            // cmp r8, r9
+            
+            // je
+
+
+            break;
+        }
+        case CMD_IS_NE:
+        {
+            break;
+        }
+        case CMD_IS_B:
+        {
+            break;
+        }
+        case CMD_IS_BE:
+        {
+            break;
+        }
+        case CMD_IS_S:
+        {
+            break;
+        }
+        case CMD_IS_SE:
+        {
+            break;
+        }
+        case CMD_AND:
+        {
+            break;
+        }
+        case CMD_OR:
+        {
+            break;
+        }
 
         default:
             printf("Unknown instruction %d(%b)\n", cmd_mask_command, cmd_mask_command);
@@ -450,6 +485,15 @@ void EmitJmp(Context* ctx, char** in_command_out_command_match)
     EmitJmpToReg(ctx, x86_R8);                 //jmp r8
 }
 
+void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset)
+{
+    ctx->out_code[ctx->out_ip++] = 0xf;
+    ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
+
+    memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
+    ctx->out_ip += 4;
+}
+
 void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
 {
     size_t in_code_label = ctx->in_code[ctx->in_ip++];
@@ -474,11 +518,7 @@ void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_co
             offset = (long long)label - (long long)((size_t)ctx->out_code[ctx->out_ip] + 2 + sizeof(int));
     }
 
-    ctx->out_code[ctx->out_ip++] = 0xf;
-    ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
-
-    memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
-    ctx->out_ip += 4;
+    EmitCondJmpInstruction(ctx, command, offset);
 }
 
 void EmitAddSub(Context* ctx, x86_COMMANDS command)
