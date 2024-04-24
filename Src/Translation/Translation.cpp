@@ -57,7 +57,7 @@ void          PutPrefixForTwoReg(Context* ctx, x86_REGISTERS *reg1, x86_REGISTER
 void          PutPrefixForOneReg(Context* ctx, x86_REGISTERS* reg);
 void          EmitMoveRegToReg(Context* ctx, x86_REGISTERS reg_to, x86_REGISTERS reg_from);
 void          DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip);
-void          EmitAddSubRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
+void          EmitAddSubAndOrRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2);
 void          EmitSyscall(Context* ctx);
 void          NullifyReg(Context* ctx, x86_REGISTERS reg);
 void          EmitAddSubNumWithReg(Context* ctx, x86_REGISTERS reg, int number, x86_COMMANDS command);
@@ -66,6 +66,7 @@ void          EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2
 void          EmitPushAllRegs(Context* ctx);
 void          EmitPopAllRegs(Context* ctx);
 void          EmitCqo(Context* ctx);
+void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
 
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
@@ -272,19 +273,18 @@ void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
                                                     // label1:
         
         if (cmd == CMD_OR)
-            // TODO or r8, r9
+            EmitAddSubAndOrRegs(ctx, x86_OR, x86_R8, x86_R9);   // or r8, r9
         else if (cmd == CMD_AND)
-            // TODO and r8, r9
+            EmitAddSubAndOrRegs(ctx, x86_AND, x86_R8, x86_R9);  // and r8, r9
         
-        EmitPushPopReg(ctx, x86_PUSH, x86_R8);
-
+        EmitPushPopReg(ctx, x86_PUSH, x86_R8);          // push r8
     }
     else
     {
         EmitCmpTwoReg(ctx, x86_R8, x86_R9);     // cmp r8, r9
 
         EmitMovAbsInReg(ctx, 1, x86_R8);        // mov r8, 1
-        EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd) , 7);  // cond_jmp label
+        EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd), 7);  // cond_jmp label
 
         EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 0
                                                 // label:
@@ -563,7 +563,7 @@ void EmitAddSub(Context* ctx, x86_COMMANDS command)
     EmitPushPopReg(ctx, x86_POP, x86_R9);    //pop r9
     EmitPushPopReg(ctx, x86_POP, x86_R8);    //pop r8
     
-    EmitAddSubRegs(ctx, command, x86_R8, x86_R9);  //add(sub) r8, r9
+    EmitAddSubAndOrRegs(ctx, command, x86_R8, x86_R9);  //add(sub) r8, r9
 
     EmitPushPopReg(ctx, x86_PUSH, x86_R8);  //push r8
 }
@@ -863,7 +863,7 @@ void NullifyReg(Context* ctx, x86_REGISTERS reg)
     ctx->out_code[ctx->out_ip++] = 0xc0 | (reg << 3) | reg;    
 }
 
-void EmitAddSubRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
+void EmitAddSubAndOrRegs(Context* ctx, x86_COMMANDS command, x86_REGISTERS reg1, x86_REGISTERS reg2)
 {
     PutPrefixForTwoReg(ctx, &reg1, &reg2);
     ctx->out_code[ctx->out_ip++] = command;

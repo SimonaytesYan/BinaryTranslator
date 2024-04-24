@@ -24,6 +24,8 @@ enum x86_COMMANDS
     x86_ERROR_CMD = 0x00,
 
     x86_ADD     = 0x01,
+    x86_OR      = 0x09,
+    x86_AND     = 0x21,
     x86_CALL    = 0xd0,
     x86_CMP     = 0x39,
     x86_DEC     = 0xc8,
