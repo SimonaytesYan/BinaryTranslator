@@ -199,7 +199,7 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
             printf("cmd = %b\n", cmd);
         #endif
 
-        assert(CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match));
+        assert(CommandParse((COMMANDS)cmd, &ctx, in_command_out_command_match) == 0);
         #ifdef DEBUG
             DumpInOutCode(ctx.in_code, ctx.in_ip, ctx.out_code, ctx.out_ip); 
         #endif           
@@ -228,6 +228,67 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
     free(in_command_out_command_match);
 
     return 0;
+}
+
+COMMANDS ConvertLogicalOpToCondJmp(COMMANDS cmd)
+{
+    switch (cmd)
+    {
+        case CMD_IS_EQ:
+            return CMD_JE;
+        case CMD_IS_NE:
+            return CMD_JNE;
+        case CMD_IS_B:
+            return CMD_JA;
+        case CMD_IS_BE:
+            return CMD_JAE;
+        case CMD_IS_S:
+            return CMD_JB;
+        case CMD_IS_SE:
+            return CMD_JBE;
+        case CMD_AND:
+        case CMD_OR:
+        default:
+            break;
+    }
+}
+
+void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
+{
+    EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
+    EmitPushPopReg(ctx, x86_POP, x86_R9);   // pop r9
+    if (cmd == CMD_OR || CMD_AND)
+    {
+        EmitMovAbsInReg(ctx, 0, x86_R10);           // mov r10, 0
+
+        EmitCmpTwoReg(ctx, x86_R8, x86_R10);        // cmp r8, r10
+        EmitCondJmpInstruction(ctx, CMD_JE , 7);    // je label
+        EmitMovAbsInReg(ctx, 1, x86_R8);            // mov r8, 1
+                                                    // label:
+        
+        EmitCmpTwoReg(ctx, x86_R9, x86_R10);        // cmp r9, r10
+        EmitCondJmpInstruction(ctx, CMD_JE , 7);    // je label1
+        EmitMovAbsInReg(ctx, 1, x86_R9);            // mov r9, 1
+                                                    // label1:
+        
+        if (cmd == CMD_OR)
+            // TODO or r8, r9
+        else if (cmd == CMD_AND)
+            // TODO and r8, r9
+        
+        EmitPushPopReg(ctx, x86_PUSH, x86_R8);
+
+    }
+    else
+    {
+        EmitCmpTwoReg(ctx, x86_R8, x86_R9);     // cmp r8, r9
+
+        EmitMovAbsInReg(ctx, 1, x86_R8);        // mov r8, 1
+        EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd) , 7);  // cond_jmp label
+
+        EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 0
+                                                // label:
+    }
 }
 
 int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match)
@@ -390,42 +451,16 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
         }
 
         case CMD_IS_EQ:
-        {
-            EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
-            EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r9
-            // cmp r8, r9
-            
-            // je
-
-
-            break;
-        }
         case CMD_IS_NE:
-        {
-            break;
-        }
         case CMD_IS_B:
-        {
-            break;
-        }
         case CMD_IS_BE:
-        {
-            break;
-        }
         case CMD_IS_S:
-        {
-            break;
-        }
         case CMD_IS_SE:
-        {
-            break;
-        }
         case CMD_AND:
-        {
-            break;
-        }
         case CMD_OR:
         {
+            ctx->in_ip++;
+            DecodeAndEmitLogicalOperator(ctx, cmd);
             break;
         }
 
