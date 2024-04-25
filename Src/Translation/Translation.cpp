@@ -16,7 +16,7 @@ const size_t kTestNumber = 1;
 const size_t kRunsInTest = 1;
 
 #define DEBUG
-#define GET_TIME
+// #define GET_TIME
 
 struct Context
 {
@@ -707,21 +707,21 @@ int EmitCall(Context* ctx, char** in_command_out_command_match)
     size_t in_code_label = ctx->in_code[ctx->in_ip++];
     size_t label         = (size_t)in_command_out_command_match[in_code_label];
 
-    EmitMovAbsInReg(ctx, 0, x86_R8);           //movabs r8, return_address (return_address will be put here later) <-------
-                                                                                                                        //             |
-    size_t* ret_address = (size_t*)&ctx->out_code[ctx->out_ip - 8];                                                            //             |
-                                                                                                                        //             |
-    x86_REGISTERS reg2 = x86_R8;                            //                                                          //             |
-    x86_REGISTERS reg1 = x86_RSI;                           //                                                          //             |
-    PutPrefixForTwoReg(ctx, &reg1, &reg2);     //                                                          //             |
-    ctx->out_code[ctx->out_ip++] = x86_MOV;                        //                                                          //             |
-    ctx->out_code[ctx->out_ip++] = (char)(reg1 | (reg2 << 3));     //mov [rsi], r8                                             //             |
-                                                                                                                        //             |
-    EmitAddSubNumWithReg(ctx, x86_RSI, 8, x86_ADD);// add rsi, 8                                           //             |
-    EmitMovAbsInReg(ctx, label, x86_R8);           //movabs r8, label                                      //             |
-    EmitJmpToReg(ctx, x86_R8);                     //jmp r8                                                //             |
-                                                                                                                        //             |
-    size_t curr_address = (size_t)&ctx->out_code[ctx->out_ip];     //put return_address --------------------------------------------------------|
+    EmitMovAbsInReg(ctx, 0, x86_R8);                                //movabs r8, return_address (return_address will be put here later) <-------
+                                                                                                                                //              |
+    size_t* ret_address = (size_t*)&ctx->out_code[ctx->out_ip - 8];                                                             //              |
+                                                                                                                                //              |
+    x86_REGISTERS reg2 = x86_R8;                                    //                                                          //              |
+    x86_REGISTERS reg1 = x86_RSI;                                   //                                                          //              |
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);                          //                                                          //              |
+    ctx->out_code[ctx->out_ip++] = x86_MOV;                         //                                                           //             |
+    ctx->out_code[ctx->out_ip++] = (char)(reg1 | (reg2 << 3));      // mov [rsi], r8                                             //             |
+                                                                                                                                //              |
+    EmitAddSubNumWithReg(ctx, x86_RSI, 8, x86_ADD);                 // add rsi, 8                                                               |
+    EmitMovAbsInReg(ctx, label, x86_R8);                            // movabs r8, label                                      //                 |
+    EmitJmpToReg(ctx, x86_R8);                                      // jmp r8                                                //                 |
+                                                                                                                                //              |
+    size_t curr_address = (size_t)&ctx->out_code[ctx->out_ip];      //put return_address -------------------------------------------------------|
     memcpy(ret_address, &curr_address, sizeof(size_t));
 
     return 0;
@@ -817,17 +817,17 @@ x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
     switch (command)        //reverb because soft CPU architecture
     {
         case CMD_JA:
-            return x86_JLE;
-        case CMD_JAE:
-            return x86_JL;
-        case CMD_JB:
-            return x86_JGE;
-        case CMD_JBE:
             return x86_JG;
+        case CMD_JAE:
+            return x86_JGE;
+        case CMD_JB:
+            return x86_JL;
+        case CMD_JBE:
+            return x86_JLE;
         case CMD_JE:
-            return x86_JNE;
-        case CMD_JNE:
             return x86_JE;
+        case CMD_JNE:
+            return x86_JNE;
             
         default:
             return x86_ERROR_CMD;
