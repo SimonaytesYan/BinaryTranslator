@@ -66,7 +66,7 @@ void          EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2
 void          EmitPushAllRegs(Context* ctx);
 void          EmitPopAllRegs(Context* ctx);
 void          EmitCqo(Context* ctx);
-void            EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
+void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const char offset);
 
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
@@ -522,23 +522,22 @@ void EmitJmp(Context* ctx, char** in_command_out_command_match)
     EmitJmpToReg(ctx, x86_R8);                 //jmp r8
 }
 
-void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset)
+void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const char offset)
 {
-    ctx->out_code[ctx->out_ip++] = 0xf;
     ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
-
-    memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
-    ctx->out_ip += 4;
+    ctx->out_code[ctx->out_ip++] = offset;
 }
 
 void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
 {
-    size_t in_code_label = ctx->in_code[ctx->in_ip++];
-    size_t label         = (size_t)in_command_out_command_match[in_code_label];
+    size_t in_code_label  = ctx->in_code[ctx->in_ip++];
+    size_t label          = (size_t)in_command_out_command_match[in_code_label];
+    size_t start_jmp_emit = (size_t)&ctx->out_code[ctx->out_ip];
 
     #ifdef DEBUG
-        printf("in_code_label = %zu\n", in_code_label);
-        printf("label = %zu\n", label);
+        printf("in_code_label  = %zu\n", in_code_label);
+        printf("label          = %zu\n", label);
+        printf("start_jmp_emit = %zu\n", start_jmp_emit);
     #endif
 
     EmitPushPopReg(ctx, x86_POP, x86_R9);  //pop r9
@@ -546,15 +545,15 @@ void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_co
 
     EmitCmpTwoReg(ctx, x86_R8, x86_R9);    //cmp r8, r9
 
-    long long offset = 0;
+    unsigned char offset = 0;
     if (label != 0)                                             //unknown label for now (in first compilation pass)
     {
-        if (label < ((size_t)&(ctx->out_code[ctx->out_ip])))
-            offset = (long long)label - ((long long)&ctx->out_code[ctx->out_ip]);
-        else
-            offset = (long long)label - (long long)((size_t)ctx->out_code[ctx->out_ip] + 2 + sizeof(int));
+        size_t current_addr = (size_t)&ctx->out_code[ctx->out_ip];
+        offset = label - current_addr - 2;
     }
-
+    #ifdef DEBUG
+        printf("offset = %d\n", (char)offset);
+    #endif
     EmitCondJmpInstruction(ctx, command, offset);
 }
 
@@ -686,8 +685,8 @@ void EmitReturn(Context* ctx)
 {
     EmitAddSubNumWithReg(ctx, x86_RSI, 8, x86_SUB); // sub rsi, 8
 
-    ctx->out_code[ctx->out_ip++] = 0xff;                                //
-    ctx->out_code[ctx->out_ip++] = 0x20 | x86_RSI;                      //jmp [rsi]
+    ctx->out_code[ctx->out_ip++] = 0xff;            //
+    ctx->out_code[ctx->out_ip++] = 0x20 | x86_RSI;  // jmp [rsi]
 }
 
 void EmitJmpToReg(Context* ctx, x86_REGISTERS reg)
