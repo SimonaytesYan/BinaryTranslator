@@ -66,7 +66,7 @@ void          EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2
 void          EmitPushAllRegs(Context* ctx);
 void          EmitPopAllRegs(Context* ctx);
 void          EmitCqo(Context* ctx);
-void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const char offset);
+void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
 
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
@@ -524,13 +524,13 @@ void EmitJmp(Context* ctx, char** in_command_out_command_match)
     EmitJmpToReg(ctx, x86_R8);                 //jmp r8
 }
 
-void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const long long offset)
+void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset)
 {
     ctx->out_code[ctx->out_ip++] = 0x0f;
     ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
 
-
-    ctx->out_code[ctx->out_ip++] = offset;
+    memcpy(&ctx->out_code[ctx->out_ip], &offset, sizeof(int));
+    ctx->out_ip += 4;
 }
 
 void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
@@ -540,9 +540,9 @@ void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_co
     size_t start_jmp_emit = (size_t)&ctx->out_code[ctx->out_ip];
 
     #ifdef DEBUG
-        printf("in_code_label  = %zu\n", in_code_label);
-        printf("label          = %zu\n", label);
-        printf("start_jmp_emit = %zu\n", start_jmp_emit);
+        printf("in_code_label  = 0x%x\n", in_code_label);
+        printf("label          = 0x%x\n", label);
+        printf("start_jmp_emit = 0x%x\n", start_jmp_emit);
     #endif
 
     EmitPushPopReg(ctx, x86_POP, x86_R9);  //pop r9
@@ -550,14 +550,25 @@ void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_co
 
     EmitCmpTwoReg(ctx, x86_R8, x86_R9);    //cmp r8, r9
 
-    unsigned char offset = 0;
+    int offset = 0;
     if (label != 0)                                             //unknown label for now (in first compilation pass)
     {
         size_t current_addr = (size_t)&ctx->out_code[ctx->out_ip];
-        offset = label - current_addr - 2;
+        #ifdef DEBUG
+            printf("current_addr   = 0x%x\n", current_addr);
+        #endif
+        if (label <= current_addr)
+        {
+            #ifdef DEBUG
+                printf("label <= current_addr\n");
+            #endif
+            offset = label - current_addr - 6;
+        }
+        else
+            offset = label - current_addr - 6;
     }
     #ifdef DEBUG
-        printf("offset = %d\n", (char)offset);
+        printf("offset = %d\n", offset);
     #endif
     EmitCondJmpInstruction(ctx, command, offset);
 }
