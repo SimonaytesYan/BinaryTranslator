@@ -42,12 +42,12 @@ enum x86_COMMANDS
     x86_SUB     = 0x29,
     x86_XOR     = 0x31,
 
-    x86_JG      = 0x8f,
-    x86_JGE     = 0x8d,
-    x86_JL      = 0x8c,
-    x86_JLE     = 0x8e,
-    x86_JE      = 0x84,
-    x86_JNE     = 0x85,
+    x86_JG      = 0x7f,
+    x86_JGE     = 0x7d,
+    x86_JL      = 0x7c,
+    x86_JLE     = 0x7e,
+    x86_JE      = 0x74,
+    x86_JNE     = 0x75,
 };
 
 enum x86_CMD_ARGUMENTS
