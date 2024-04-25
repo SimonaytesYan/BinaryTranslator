@@ -30,8 +30,8 @@ struct Context
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
-int  Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
-void Run(char* out_code);
+int              Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
+extern "C" void  Run(char* out_code);
 
 void  EmitAddSub(Context* ctx, x86_COMMANDS command);
 int   EmitCall(Context* ctx, char** in_command_out_command_match);
@@ -66,7 +66,7 @@ void          EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2
 void          EmitPushAllRegs(Context* ctx);
 void          EmitPopAllRegs(Context* ctx);
 void          EmitCqo(Context* ctx);
-void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
+void            EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
 
 double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
 void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
@@ -132,7 +132,7 @@ void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin
     #endif
 }
 
-void Run(char* out_code)
+extern "C" void Run(char* out_code)
 {
     __asm__ volatile(
         ".intel_syntax noprefix\n\t"
@@ -252,13 +252,15 @@ COMMANDS ConvertLogicalOpToCondJmp(COMMANDS cmd)
         default:
             break;
     }
+
+    return (COMMANDS)-1;
 }
 
 void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
 {
     EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
     EmitPushPopReg(ctx, x86_POP, x86_R9);   // pop r9
-    if (cmd == CMD_OR || CMD_AND)
+    if (cmd == CMD_OR || cmd == CMD_AND)
     {
         EmitMovAbsInReg(ctx, 0, x86_R10);           // mov r10, 0
 
@@ -959,7 +961,7 @@ double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas)
     for (int i = 0; i < number_meas; i++)
         sum += data[i];
 
-    double average       = sum/number_meas;
+    double average       = sum / (double)number_meas;
     double std_deviation = 0;
 
     for (int i = 0; i < number_meas; i++)

@@ -1,0 +1,184 @@
+
+Exe/Translate:     file format elf64-x86-64
+
+SYMBOL TABLE:
+0000000000000000 l    df *ABS*	0000000000000000              Scrt1.o
+0000000000000358 l     O .note.ABI-tag	0000000000000020              __abi_tag
+0000000000000000 l    df *ABS*	0000000000000000              crtstuff.c
+0000000000019350 l     F .text	0000000000000000              deregister_tm_clones
+0000000000019380 l     F .text	0000000000000000              register_tm_clones
+00000000000193c0 l     F .text	0000000000000000              __do_global_dtors_aux
+000000000004c18c l     O .bss	0000000000000001              completed.0
+0000000000030d70 l     O .fini_array	0000000000000000              __do_global_dtors_aux_fini_array_entry
+0000000000019400 l     F .text	0000000000000000              frame_dummy
+0000000000030d48 l     O .init_array	0000000000000000              __frame_dummy_init_array_entry
+0000000000000000 l    df *ABS*	0000000000000000              asan_preinit.cpp
+0000000000000000 l    df *ABS*	0000000000000000              main.cpp
+0000000000029020 l     O .rodata	0000000000000004              _ZL5REG_N
+0000000000029060 l     O .rodata	0000000000000004              _ZL9SIGNATURE
+00000000000290a0 l     O .rodata	0000000000000004              _ZL11ASM_VERSION
+00000000000290e0 l     O .rodata	0000000000000004              _ZL8RAM_SIZE
+0000000000029120 l     O .rodata	0000000000000004              _ZL15CALL_STACK_SIZE
+0000000000029160 l     O .rodata	0000000000000004              _ZL7FI_BYTE
+00000000000291a0 l     O .rodata	0000000000000004              _ZL12WINDOW_HIGHT
+00000000000291e0 l     O .rodata	0000000000000004              _ZL12WINDOW_WIDTH
+0000000000029220 l     O .rodata	0000000000000004              _ZL10MAX_LABELS
+0000000000029260 l     O .rodata	0000000000000004              _ZL13MAX_LABEL_LEN
+00000000000292a0 l     O .rodata	0000000000000008              _ZL16kMaxFilepathSize
+0000000000019b74 l     F .text	000000000000001a              _sub_D_00099_0
+0000000000019b8e l     F .text	0000000000000024              _sub_I_00099_1
+0000000000000000 l    df *ABS*	0000000000000000              CommandSystem.cpp
+0000000000029660 l     O .rodata	0000000000000004              _ZL5REG_N
+00000000000296a0 l     O .rodata	0000000000000004              _ZL9SIGNATURE
+00000000000296e0 l     O .rodata	0000000000000004              _ZL11ASM_VERSION
+0000000000029720 l     O .rodata	0000000000000004              _ZL8RAM_SIZE
+0000000000029760 l     O .rodata	0000000000000004              _ZL15CALL_STACK_SIZE
+00000000000297a0 l     O .rodata	0000000000000004              _ZL7FI_BYTE
+00000000000297e0 l     O .rodata	0000000000000004              _ZL12WINDOW_HIGHT
+0000000000029820 l     O .rodata	0000000000000004              _ZL12WINDOW_WIDTH
+0000000000029860 l     O .rodata	0000000000000004              _ZL10MAX_LABELS
+00000000000298a0 l     O .rodata	0000000000000004              _ZL13MAX_LABEL_LEN
+000000000001a00d l     F .text	000000000000001a              _sub_D_00099_0
+000000000001a027 l     F .text	0000000000000024              _sub_I_00099_1
+0000000000000000 l    df *ABS*	0000000000000000              Stdlib.cpp
+0000000000029c00 l     O .rodata	0000000000000008              _ZL11kBufferSize
+000000000001a811 l     F .text	000000000000001a              _sub_D_00099_0
+000000000001a82b l     F .text	0000000000000024              _sub_I_00099_1
+0000000000000000 l    df *ABS*	0000000000000000              Translation.cpp
+0000000000029e40 l     O .rodata	0000000000000004              _ZL5REG_N
+0000000000029e80 l     O .rodata	0000000000000004              _ZL9SIGNATURE
+0000000000029ec0 l     O .rodata	0000000000000004              _ZL11ASM_VERSION
+0000000000029f00 l     O .rodata	0000000000000004              _ZL8RAM_SIZE
+0000000000029f40 l     O .rodata	0000000000000004              _ZL15CALL_STACK_SIZE
+0000000000029f80 l     O .rodata	0000000000000004              _ZL7FI_BYTE
+0000000000029fc0 l     O .rodata	0000000000000004              _ZL12WINDOW_HIGHT
+000000000002a000 l     O .rodata	0000000000000004              _ZL12WINDOW_WIDTH
+000000000002a040 l     O .rodata	0000000000000004              _ZL10MAX_LABELS
+000000000002a080 l     O .rodata	0000000000000004              _ZL13MAX_LABEL_LEN
+000000000002a0c0 l     O .rodata	0000000000000008              _ZL11kTestNumber
+000000000002a100 l     O .rodata	0000000000000008              _ZL11kRunsInTest
+0000000000028134 l     F .text	000000000000001a              _sub_D_00099_0
+000000000002814e l     F .text	0000000000000024              _sub_I_00099_1
+0000000000000000 l    df *ABS*	0000000000000000              crtstuff.c
+000000000002ef9c l     O .eh_frame	0000000000000000              __FRAME_END__
+0000000000000000 l    df *ABS*	0000000000000000              
+000000000002e4d0 l       .eh_frame_hdr	0000000000000000              __GNU_EH_FRAME_HDR
+0000000000030d78 l     O .dynamic	0000000000000000              _DYNAMIC
+0000000000031000 l     O .got.plt	0000000000000000              _GLOBAL_OFFSET_TABLE_
+0000000000000000       F *UND*	0000000000000000              __asan_report_store4
+000000000001dbb5 g     F .text	00000000000006ed              _Z18EmitConditionalJmpP7Context8COMMANDSPPc
+000000000001e343 g     F .text	0000000000000733              _Z10EmitMulDivP7Contextb
+0000000000000000       F *UND*	0000000000000000              strlen
+0000000000000000       F *UND*	0000000000000000              printf
+0000000000000000       F *UND*	0000000000000000              __asan_register_globals
+0000000000000000       F *UND*	0000000000000000              free
+000000000004c160 g       .data	0000000000000000              _edata
+000000000002274d g     F .text	000000000000004d              _Z20ConvertMyRegInx86Reg9REGISTERS
+0000000000000000       F *UND*	0000000000000000              getc@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              __asan_stack_malloc_0
+00000000000231b2 g     F .text	000000000000036b              _Z11EmitSyscallP7Context
+000000000002269f g     F .text	00000000000000ae              _Z8EmitSqrtP7Context
+00000000000311a0  w      .data	0000000000000000              data_start
+0000000000029000 g     O .rodata	0000000000000004              _IO_stdin_used
+0000000000027c2b g     F .text	0000000000000509              _Z25CalcAndPrintfStdDeviationPKdm
+0000000000000000  w    F *UND*	0000000000000000              __cxa_finalize@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              puts
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_divrem_overflow
+0000000000019409 g     F .text	00000000000003bf              main
+000000000001b293 g     F .text	0000000000000a93              _Z9TranslatePiPcP8MyHeaderS0_
+0000000000000000       F *UND*	0000000000000000              __asan_stack_malloc_1
+00000000000311a8 g     O .data	0000000000000000              .hidden __dso_handle
+0000000000000000       F *UND*	0000000000000000              __asan_report_load4
+00000000000252a0 g     F .text	000000000000067f              _Z18PutPrefixForOneRegP7ContextP13x86_REGISTERS
+000000000002282d g     F .text	0000000000000093              _Z14EmitPopAllRegsP7Context
+000000000001fd91 g     F .text	0000000000001163              _Z7EmitPopP7Context
+000000000001afbf g     F .text	0000000000000035              Run
+0000000000000000       F *UND*	0000000000000000              __assert_fail@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              clock@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_load_invalid_value
+0000000000000000       F *UND*	0000000000000000              fread
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_pointer_overflow
+0000000000028174 g     F .fini	0000000000000000              .hidden _fini
+0000000000000000       F *UND*	0000000000000000              open@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              __libc_start_main@GLIBC_2.34
+0000000000000000       F *UND*	0000000000000000              mmap
+0000000000000000       F *UND*	0000000000000000              sqrt@GLIBC_2.2.5
+000000000001d12f g     F .text	0000000000000082              _Z6EmitInP7Context
+000000000004c160 g     O .bss	0000000000000008              stdin@GLIBC_2.2.5
+000000000002279a g     F .text	0000000000000093              _Z15EmitPushAllRegsP7Context
+0000000000024bb7 g     F .text	00000000000006e9              _Z21ParsePushPopArgumentsP7ContextPiPjP13x86_REGISTERS
+000000000001cbd3 g     F .text	000000000000055c              _Z11EmitCallRegP7Context13x86_REGISTERS
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_mul_overflow
+0000000000000000       F *UND*	0000000000000000              fopen
+00000000000217d6 g     F .text	0000000000000cdc              _Z8EmitCallP7ContextPPc
+0000000000000000       F *UND*	0000000000000000              strcpy
+0000000000030d20 g     O .preinit_array	0000000000000008              .hidden __local_asan_preinit
+000000000001a84f g     F .text	0000000000000770              _Z15TranslateAndRunPcm8MyHeader
+0000000000024034 g     F .text	000000000000055c              _Z10NullifyRegP7Context13x86_REGISTERS
+0000000000019320 g     F .text	0000000000000026              _start
+0000000000000000       F *UND*	0000000000000000              fwrite
+0000000000000000       F *UND*	0000000000000000              __asan_report_store8
+0000000000019964 g     F .text	0000000000000210              _Z11GetFileSizePKc
+0000000000000000       F *UND*	0000000000000000              __asan_unregister_globals
+000000000001d233 g     F .text	0000000000000299              _Z7EmitJmpP7ContextPPc
+00000000000278c0 g     F .text	000000000000036b              _Z7EmitCqoP7Context
+0000000000000000       F *UND*	0000000000000000              fseek@GLIBC_2.2.5
+0000000000000000       F *UND*	0000000000000000              __stack_chk_fail@GLIBC_2.4
+0000000000019000 g     F .init	0000000000000000              .hidden _init
+0000000000000000       F *UND*	0000000000000000              __asan_handle_no_return
+000000000001d1b1 g     F .text	0000000000000082              _Z7EmitOutP7Context
+0000000000000000       F *UND*	0000000000000000              __asan_init
+000000000004c160 g     O .data	0000000000000000              .hidden __TMC_END__
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_sub_overflow
+000000000002314d g     F .text	0000000000000065              _Z24ConditionalJmpConversion8COMMANDS
+000000000002591f g     F .text	0000000000000a9c              _Z18PutPrefixForTwoRegP7ContextP13x86_REGISTERSS2_
+0000000000022b3e g     F .text	000000000000060f              _Z13EmitCmpTwoRegP7Context13x86_REGISTERSS1_
+000000000001a768 g     F .text	00000000000000a9              _Z7SqrtIntx
+000000000001ea76 g     F .text	000000000000131b              _Z8EmitPushP7Context
+0000000000000000       F *UND*	0000000000000000              calloc
+000000000001d4cc g     F .text	00000000000006e9              _Z22EmitCondJmpInstructionP7Context8COMMANDSi
+0000000000000000       F *UND*	0000000000000000              __asan_report_load1
+0000000000000000       F *UND*	0000000000000000              __asan_report_load16
+0000000000000000       F *UND*	0000000000000000              __asan_report_store1
+00000000000273bf g     F .text	0000000000000501              _Z10EmitIncDecP7Context13x86_REGISTERS12x86_COMMANDS
+000000000004c180 g     O .bss	0000000000000008              stderr@GLIBC_2.2.5
+0000000000019bb2 g     F .text	00000000000001f8              _Z12InitMyHeaderP8MyHeaderm
+00000000000311a0 g       .data	0000000000000000              __data_start
+0000000000019daa g     F .text	0000000000000263              _Z21CheckMyHeaderFromFileP8MyHeaderP8_IO_FILE
+000000000004c190 g       .bss	0000000000000000              _end
+000000000001e2a2 g     F .text	00000000000000a1              _Z10EmitAddSubP7Context12x86_COMMANDS
+0000000000000000       F *UND*	0000000000000000              putchar@GLIBC_2.2.5
+000000000001bd8c g     F .text	0000000000000132              _Z28DecodeAndEmitLogicalOperatorP7Context8COMMANDS
+000000000001bd26 g     F .text	0000000000000066              _Z25ConvertLogicalOpToCondJmp8COMMANDS
+000000000001aff4 g     F .text	000000000000029f              _Z11ContextCtorP7ContextPiPcmmS2_
+00000000000197c8 g     F .text	000000000000019c              _Z12ParseCmdArgsiPPcS_
+000000000001a04b g     F .text	00000000000005d9              _Z14OutputNumber10x
+00000000000263bb g     F .text	000000000000060f              _Z16EmitMoveRegToRegP7Context13x86_REGISTERSS1_
+00000000000269ca g     F .text	00000000000003e1              _Z14EmitPushPopRegP7Context12x86_COMMANDS13x86_REGISTERS
+0000000000000000       F *UND*	0000000000000000              __asan_report_load8
+000000000004c160 g       .bss	0000000000000000              __bss_start
+0000000000024590 g     F .text	0000000000000627              _Z19EmitAddSubAndOrRegsP7Context12x86_COMMANDS13x86_REGISTERSS2_
+000000000002127a g     F .text	000000000000055c              _Z12EmitJmpToRegP7Context13x86_REGISTERS
+0000000000000000       F *UND*	0000000000000000              __asan_stack_malloc_2
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_out_of_bounds
+0000000000000000       F *UND*	0000000000000000              stat
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_type_mismatch_v1
+000000000004c188 g     O .bss	0000000000000004              __asan_option_detect_stack_use_after_return
+00000000000228c0 g     F .text	000000000000027e              _Z13DumpInOutCodePimPcm
+0000000000000000       F *UND*	0000000000000000              __asan_version_mismatch_check_v8
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_nonnull_arg
+0000000000026dab g     F .text	0000000000000614              _Z15EmitMovAbsInRegP7Contextm13x86_REGISTERS
+0000000000000000  w      *UND*	0000000000000000              _ITM_deregisterTMCloneTable
+0000000000020ef4 g     F .text	0000000000000386              _Z10EmitReturnP7Context
+000000000001a624 g     F .text	0000000000000144              _Z13InputNumber10v
+0000000000000000       F *UND*	0000000000000000              __asan_report_store_n
+000000000001bebe g     F .text	0000000000000d15              _Z12CommandParse8COMMANDSP7ContextPPc
+0000000000000000       F *UND*	0000000000000000              __asan_stack_malloc_3
+0000000000000000  w      *UND*	0000000000000000              __gmon_start__
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_negate_overflow
+0000000000000000  w      *UND*	0000000000000000              _ITM_registerTMCloneTable
+000000000002351d g     F .text	0000000000000b17              _Z20EmitAddSubNumWithRegP7Context13x86_REGISTERSi12x86_COMMANDS
+0000000000000000       F *UND*	0000000000000000              __ubsan_handle_add_overflow
+00000000000224b2 g     F .text	00000000000001ed              _Z7EmitHltP7Context
+
+
