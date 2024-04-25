@@ -258,35 +258,37 @@ COMMANDS ConvertLogicalOpToCondJmp(COMMANDS cmd)
 
 void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
 {
+    const unsigned char skip_movabs_offset = 0xa; 
+
     EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
     EmitPushPopReg(ctx, x86_POP, x86_R9);   // pop r9
     if (cmd == CMD_OR || cmd == CMD_AND)
     {
-        EmitMovAbsInReg(ctx, 0, x86_R10);           // mov r10, 0
+        EmitMovAbsInReg(ctx, 0, x86_R10);                           // mov r10, 0
 
-        EmitCmpTwoReg(ctx, x86_R8, x86_R10);        // cmp r8, r10
-        EmitCondJmpInstruction(ctx, CMD_JE , 7);    // je label
-        EmitMovAbsInReg(ctx, 1, x86_R8);            // mov r8, 1
-                                                    // label:
+        EmitCmpTwoReg(ctx, x86_R8, x86_R10);                        // cmp r8, r10
+        EmitCondJmpInstruction(ctx, CMD_JE, skip_movabs_offset);    // je label
+        EmitMovAbsInReg(ctx, 1, x86_R8);                            // mov r8, 1
+                                                                    // label:
         
-        EmitCmpTwoReg(ctx, x86_R9, x86_R10);        // cmp r9, r10
-        EmitCondJmpInstruction(ctx, CMD_JE , 7);    // je label1
-        EmitMovAbsInReg(ctx, 1, x86_R9);            // mov r9, 1
-                                                    // label1:
+        EmitCmpTwoReg(ctx, x86_R9, x86_R10);                        // cmp r9, r10
+        EmitCondJmpInstruction(ctx, CMD_JE, skip_movabs_offset);    // je label1
+        EmitMovAbsInReg(ctx, 1, x86_R9);                            // mov r9, 1
+                                                                    // label1:
         
         if (cmd == CMD_OR)
             EmitAddSubAndOrRegs(ctx, x86_OR, x86_R8, x86_R9);   // or r8, r9
         else if (cmd == CMD_AND)
             EmitAddSubAndOrRegs(ctx, x86_AND, x86_R8, x86_R9);  // and r8, r9
         
-        EmitPushPopReg(ctx, x86_PUSH, x86_R8);          // push r8
+        EmitPushPopReg(ctx, x86_PUSH, x86_R8);                  // push r8
     }
     else
     {
         EmitCmpTwoReg(ctx, x86_R8, x86_R9);     // cmp r8, r9
 
         EmitMovAbsInReg(ctx, 1, x86_R8);        // mov r8, 1
-        EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd), 7);  // cond_jmp label
+        EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd), skip_movabs_offset);  // cond_jmp label
 
         EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 0
                                                 // label:
@@ -522,9 +524,12 @@ void EmitJmp(Context* ctx, char** in_command_out_command_match)
     EmitJmpToReg(ctx, x86_R8);                 //jmp r8
 }
 
-void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const char offset)
+void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const long long offset)
 {
+    ctx->out_code[ctx->out_ip++] = 0x0f;
     ctx->out_code[ctx->out_ip++] = ConditionalJmpConversion(command);
+
+
     ctx->out_code[ctx->out_ip++] = offset;
 }
 
