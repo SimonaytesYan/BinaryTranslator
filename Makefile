@@ -24,9 +24,8 @@ stdlib_release:
 run_lang_with_proc:
 	cd Src/MyLanguage && make run
 
-run_lang_with_jit:
-	cd Src/MyLanguage && make compile
-	./Exe/Translate Src/MyLanguage/Libs/CPU/a.sy
+run_lang: 
+	cd Src/MyLanguage && make compile FILE="../../$(FILE)"
 
 run: debug
 	./Exe/Translate a.sy

@@ -35,7 +35,7 @@ extern "C" void  Run(char* out_code);
 
 void  EmitAddSub(Context* ctx, x86_COMMANDS command);
 int   EmitCall(Context* ctx, char** in_command_out_command_match);
-void  EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match);
+void  DecodeEmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match);
 void  EmitIn(Context* ctx);
 int   EmitHlt(Context* ctx);
 void  EmitJmp(Context* ctx, char** in_command_out_command_match);
@@ -236,17 +236,17 @@ COMMANDS ConvertLogicalOpToCondJmp(COMMANDS cmd)
     switch (cmd)
     {
         case CMD_IS_EQ:
-            return CMD_JE;
-        case CMD_IS_NE:
             return CMD_JNE;
+        case CMD_IS_NE:
+            return CMD_JE;
         case CMD_IS_B:
-            return CMD_JA;
-        case CMD_IS_BE:
-            return CMD_JAE;
-        case CMD_IS_S:
-            return CMD_JB;
-        case CMD_IS_SE:
             return CMD_JBE;
+        case CMD_IS_BE:
+            return CMD_JB;
+        case CMD_IS_S:
+            return CMD_JAE;
+        case CMD_IS_SE:
+            return CMD_JA;
         case CMD_AND:
         case CMD_OR:
         default:
@@ -260,8 +260,8 @@ void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
 {
     const unsigned char skip_movabs_offset = 0xa; 
 
-    EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
     EmitPushPopReg(ctx, x86_POP, x86_R9);   // pop r9
+    EmitPushPopReg(ctx, x86_POP, x86_R8);   // pop r8
     if (cmd == CMD_OR || cmd == CMD_AND)
     {
         EmitMovAbsInReg(ctx, 0, x86_R10);                           // mov r10, 0
@@ -287,10 +287,10 @@ void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
     {
         EmitCmpTwoReg(ctx, x86_R8, x86_R9);     // cmp r8, r9
 
-        EmitMovAbsInReg(ctx, 1, x86_R8);        // mov r8, 1
+        EmitMovAbsInReg(ctx, 1, x86_R8);        // mov r8, 0
         EmitCondJmpInstruction(ctx, ConvertLogicalOpToCondJmp(cmd), skip_movabs_offset);  // cond_jmp label
 
-        EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 0
+        EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 1
                                                 // label:
         
         EmitPushPopReg(ctx, x86_PUSH, x86_R8);  // push r8
@@ -422,7 +422,7 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
             #endif
 
             ctx->in_ip++;
-            EmitConditionalJmp(ctx, cmd, in_command_out_command_match);
+            DecodeEmitConditionalJmp(ctx, cmd, in_command_out_command_match);
             break;
         }
 
@@ -535,7 +535,7 @@ void EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset)
     ctx->out_ip += 4;
 }
 
-void EmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
+void DecodeEmitConditionalJmp(Context* ctx, COMMANDS command, char** in_command_out_command_match)
 {
     size_t in_code_label  = ctx->in_code[ctx->in_ip++];
     size_t label          = (size_t)in_command_out_command_match[in_code_label];
@@ -834,17 +834,17 @@ x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
     switch (command)        //reverb because soft CPU architecture
     {
         case CMD_JA:
-            return x86_JG;
-        case CMD_JAE:
-            return x86_JGE;
-        case CMD_JB:
-            return x86_JL;
-        case CMD_JBE:
             return x86_JLE;
+        case CMD_JAE:
+            return x86_JL;
+        case CMD_JB:
+            return x86_JGE;
+        case CMD_JBE:
+            return x86_JG;
         case CMD_JE:
-            return x86_JE;
-        case CMD_JNE:
             return x86_JNE;
+        case CMD_JNE:
+            return x86_JE;
             
         default:
             return x86_ERROR_CMD;
