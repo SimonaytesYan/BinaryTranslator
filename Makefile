@@ -32,4 +32,4 @@ run: debug
 
 create_dir:
 	-mkdir Exe
-	-mkDir Obj
+	-mkdir Obj
