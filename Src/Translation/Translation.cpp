@@ -292,6 +292,8 @@ void DecodeAndEmitLogicalOperator(Context* ctx, COMMANDS cmd)
 
         EmitMovAbsInReg(ctx, 0, x86_R8);        // mov r8, 0
                                                 // label:
+        
+        EmitPushPopReg(ctx, x86_PUSH, x86_R8);  // push r8
     }
 }
 
@@ -821,10 +823,10 @@ void DumpInOutCode(int* in_code, size_t in_ip, char* out_code, size_t out_ip)
 
 void EmitCmpTwoReg(Context* ctx, x86_REGISTERS reg1, x86_REGISTERS reg2)
 {
-    PutPrefixForTwoReg(ctx, &reg2, &reg1);
+    PutPrefixForTwoReg(ctx, &reg1, &reg2);
 
     ctx->out_code[ctx->out_ip++] = x86_CMP;
-    ctx->out_code[ctx->out_ip++] = 0xc0 | reg2 | (reg1 << 3);
+    ctx->out_code[ctx->out_ip++] = 0xc0 | reg1 | (reg2 << 3);
 }
 
 x86_COMMANDS ConditionalJmpConversion(COMMANDS command)
