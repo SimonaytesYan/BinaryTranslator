@@ -73,7 +73,7 @@ void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
-void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header)
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header)
 {
     assert(in_bin_filepath);
 

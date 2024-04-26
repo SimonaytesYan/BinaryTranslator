@@ -81,6 +81,6 @@ enum x86_REGISTERS
 
 //==========================================FUNCTION PROTOTYPES============================
 
-void TranslateAndRun(char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header);
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header);
 
 #endif
