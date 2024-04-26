@@ -1,0 +1,3 @@
+[submodule "Src/MyLanguage"]
+	path = Src/MyLanguage
+	url = https://github.com/SimonaytesYan/MyLanguage
