@@ -23,6 +23,9 @@ stdlib_debug: create_dir
 stdlib_release: create_dir
 	g++ -c $(RELEASE) Src/Stdlib/Stdlib.cpp -o Obj/Stdlib.o
 
+update_submodules:
+	git submodule update --init --recursive --remote
+
 run_lang_with_proc:
 	cd Src/MyLanguage && make run
 
