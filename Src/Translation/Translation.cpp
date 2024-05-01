@@ -15,7 +15,7 @@
 const size_t kTestNumber = 1;
 const size_t kRunsInTest = 1;
 
-#define DEBUG
+// #define DEBUG
 // #define GET_TIME
 
 struct Context
