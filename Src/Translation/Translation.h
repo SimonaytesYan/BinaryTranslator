@@ -16,7 +16,7 @@
 
 enum COMMANDS
 {
-    #include "../CommandSystem/Cmd.h"
+    #include "../MyLanguage/Libs/CPU/Cmd.h"
 };
 
 enum x86_COMMANDS

@@ -35,8 +35,8 @@ run_lang:
 compile_lang_and_proc:
 	cd Src/MyLanguage && make
 
-run: debug
-	./Exe/Translate a.sy
+run:
+	./Exe/Translate Src/MyLanguage/Libs/CPU/a.sy
 
 create_dir:
 	-mkdir Exe
