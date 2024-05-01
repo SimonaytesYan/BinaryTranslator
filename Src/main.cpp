@@ -25,6 +25,8 @@ int main(int argc, char* argv[])
     size_t in_file_size = GetFileSize(in_bin_filepath);
 
     TranslateAndRun(in_bin_filepath, in_file_size, in_bin_header);
+
+    printf("Successfully end JIT compilation and execution\n");
 }
 
 int ParseCmdArgs(int argc, char* argv[], char* in_bin_filepath)
