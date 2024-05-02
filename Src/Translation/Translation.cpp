@@ -33,7 +33,7 @@ struct Context
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
-int              Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram);
+           int   Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func);
 extern "C" void  Run(char* out_code);
 
 void  EmitAddSub(Context* ctx, x86_COMMANDS command);
