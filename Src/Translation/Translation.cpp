@@ -477,7 +477,7 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
 
         case CMD_BUILD_CELL:
         {
-            if (!ctx->build_cell_func)
+            assert(ctx->build_cell_func == nullptr);
                 break;
 
             ctx->in_ip++;
@@ -486,8 +486,7 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
         }
         case CMD_GET_CELL:
         {
-            if (!ctx->get_cell_func)
-                break;
+            assert(ctx->get_cell_func == nullptr);
             
             ctx->in_ip++;
             EmitGetCell(ctx);
