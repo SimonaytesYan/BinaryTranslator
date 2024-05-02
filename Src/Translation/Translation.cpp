@@ -26,6 +26,9 @@ struct Context
     size_t in_ip    = 0;
 
     char* ram       = nullptr;
+
+    BuildCell build_cell_func;
+    GetCell   get_cell_func;
 };
 
 //==========================================FUNCTION PROTOTYPES===========================================
@@ -68,12 +71,12 @@ void          EmitPopAllRegs(Context* ctx);
 void          EmitCqo(Context* ctx);
 void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
 
-double        CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
-void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram);
+double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
+void   ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
-void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header)
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header, BuildCell build_cell_func, GetCell get_cell_func)
 {
     assert(in_bin_filepath);
 
@@ -87,7 +90,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     char* call_stack = (char*)mmap(NULL, CALL_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     Context ctx = {};
-    ContextCtor(&ctx, in_code, out_code, 0, 0, ram);
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func);
 
     EmitMovAbsInReg(&ctx, (size_t)call_stack, x86_RSI);    //Put call stack pointer to rsi 
     EmitMovAbsInReg(&ctx, (size_t)ram,        x86_RDI);    //Put ram pointer to rdi
@@ -170,7 +173,7 @@ extern "C" void Run(char* out_code)
     return;
 }
 
-void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram)
+void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func)
 {
     assert(ctx);
 
@@ -181,12 +184,12 @@ void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_
     ctx->ram      = ram;
 }
 
-int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram)
+int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func)
 {
     char** in_command_out_command_match = (char**)calloc(in_header->commands_number + 1, sizeof(char*));
 
     Context ctx  = {};
-    ContextCtor(&ctx, in_code, out_code, 0, 0, ram);
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func);
 
     //==========================FIRST PASS==============================
     printf("First compilation...\n");

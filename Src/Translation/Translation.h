@@ -79,8 +79,11 @@ enum x86_REGISTERS
     x86_R15 = 0b1111,       //System register
 };
 
+typedef void (*BuildCell)(int CellType, int x, int y);
+typedef int  (*GetCell)  (int x, int y);
+
 //==========================================FUNCTION PROTOTYPES============================
 
-void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header);
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header, BuildCell build_cell_func, GetCell get_cell_func);
 
 #endif
