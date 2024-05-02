@@ -476,13 +476,13 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
         case CMD_BUILD_CELL:
         {
             ctx->in_ip++;
-            EmitBuildCell(ctx);  
+            EmitBuildCell(ctx);
             break;
         }
         case CMD_GET_CELL:
         {
             ctx->in_ip++;
-            EmitGetCell(ctx);  
+            EmitGetCell(ctx);
             break;
         }
 
