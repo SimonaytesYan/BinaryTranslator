@@ -102,7 +102,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     NullifyReg(&ctx, x86_RCX);                             //Nullify all user registers
     NullifyReg(&ctx, x86_RDX);                             //
 
-    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram);
+    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram, build_cell_func, get_cell_func);
 
     printf("Running\n");
 
