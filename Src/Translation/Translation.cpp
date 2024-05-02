@@ -475,12 +475,14 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
 
         case CMD_BUILD_CELL:
         {
-            
+            ctx->in_ip++;
+            EmitBuildCell(ctx);  
             break;
         }
         case CMD_GET_CELL:
         {
-
+            ctx->in_ip++;
+            EmitGetCell(ctx);  
             break;
         }
 
@@ -511,11 +513,11 @@ void EmitIn(Context* ctx)
     EmitMovAbsInReg(ctx, (size_t)InputNumber10, x86_RAX);  //
     EmitCallReg(ctx, x86_RAX);                             //call OutputNum10
     
-    EmitMoveRegToReg(ctx, x86_R9, x86_RAX);
+    EmitMoveRegToReg(ctx, x86_R9, x86_RAX);                // save return value
 
     EmitPopAllRegs(ctx);
     
-    EmitPushPopReg(ctx, x86_PUSH, x86_R9);
+    EmitPushPopReg(ctx, x86_PUSH, x86_R9);                  // put return value in stack
 }
 
 void EmitOut(Context* ctx)
@@ -529,6 +531,42 @@ void EmitOut(Context* ctx)
     EmitCallReg(ctx, x86_RAX);                             //call OutputNum10
 
     EmitPopAllRegs(ctx);
+}
+
+void EmitBuildCell(Context* ctx)
+{
+    EmitPushPopReg(ctx, x86_POP, x86_R10);  // CellType
+    EmitPushPopReg(ctx, x86_POP, x86_R11);  // x
+    EmitPushPopReg(ctx, x86_POP, x86_R12);  // y
+
+    EmitPushAllRegs(ctx);
+
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R10); //
+    EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // Put argument in correct regs
+    EmitMoveRegToReg(ctx, x86_RDX, x86_R12); //
+
+    EmitMovAbsInReg(ctx, (size_t)ctx->build_cell_func, x86_RAX); //
+    EmitCallReg(ctx, x86_RAX);                                   // call build_cell_func
+
+    EmitPopAllRegs(ctx);
+}
+
+void EmitGetCell(Context* ctx)
+{
+    EmitPushPopReg(ctx, x86_POP, x86_R10);  // x
+    EmitPushPopReg(ctx, x86_POP, x86_R11);  // y
+
+    EmitPushAllRegs(ctx);
+
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R10); //
+    EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // Put argument in correct regs
+
+    EmitMovAbsInReg(ctx, (size_t)ctx->get_cell_func, x86_RAX);  //
+    EmitCallReg(ctx, x86_RAX);                                  // call get_cell_func
+    EmitMoveRegToReg(ctx, x86_R9, x86_RAX);                     // save return value
+    
+    EmitPopAllRegs(ctx);
+    EmitPushPopReg(ctx, x86_PUSH, x86_R9); // put return value in stack
 }
 
 void EmitJmp(Context* ctx, char** in_command_out_command_match)
