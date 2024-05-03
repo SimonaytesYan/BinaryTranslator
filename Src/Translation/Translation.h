@@ -79,8 +79,8 @@ enum x86_REGISTERS
     x86_R15 = 0b1111,       //System register
 };
 
-typedef void (*BuildCell)(int CellType, int x, int y);
-typedef int  (*GetCell)  (int x, int y);
+typedef void      (*BuildCell)(long long CellType, long long x, long long y);
+typedef long long (*GetCell)  (long long x, long long y);
 
 //==========================================FUNCTION PROTOTYPES============================
 

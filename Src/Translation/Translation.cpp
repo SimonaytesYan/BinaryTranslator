@@ -184,6 +184,9 @@ void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_
     ctx->out_code = out_code;
     ctx->out_ip   = out_ip;
     ctx->ram      = ram;
+
+    ctx->build_cell_func = build_cell_func;
+    ctx->get_cell_func   = get_cell_func;
 }
 
 int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func)
@@ -477,7 +480,7 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
 
         case CMD_BUILD_CELL:
         {
-            assert(ctx->build_cell_func == nullptr);
+            assert(ctx->build_cell_func != nullptr);
 
             ctx->in_ip++;
             EmitBuildCell(ctx);
@@ -485,7 +488,7 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
         }
         case CMD_GET_CELL:
         {
-            assert(ctx->get_cell_func == nullptr);
+            assert(ctx->get_cell_func != nullptr);
             
             ctx->in_ip++;
             EmitGetCell(ctx);
@@ -547,9 +550,9 @@ void EmitBuildCell(Context* ctx)
 
     EmitPushAllRegs(ctx);
 
-    EmitMoveRegToReg(ctx, x86_RDI, x86_R10); //
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R12); //
     EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // Put argument in correct regs
-    EmitMoveRegToReg(ctx, x86_RDX, x86_R12); //
+    EmitMoveRegToReg(ctx, x86_RDX, x86_R10); //
 
     EmitMovAbsInReg(ctx, (size_t)ctx->build_cell_func, x86_RAX); //
     EmitCallReg(ctx, x86_RAX);                                   // call build_cell_func

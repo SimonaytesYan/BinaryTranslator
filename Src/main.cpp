@@ -11,6 +11,17 @@
 
 const size_t kMaxFilepathSize = 256;
 
+void Build(long long cell_type, long long x, long long y)
+{
+    printf("Build(cell_type = %d, x = %d, y = %d)\n", cell_type, x, y);
+}
+
+long long Get(long long x, long long y)
+{
+    printf("Get(x = %d, y = %d) = %d\n", x, y, 10);
+    return 10;
+}
+
 int main(int argc, char* argv[])
 {
     char in_bin_filepath[kMaxFilepathSize + 1] = {};
@@ -24,7 +35,7 @@ int main(int argc, char* argv[])
 
     size_t in_file_size = GetFileSize(in_bin_filepath);
 
-    TranslateAndRun(in_bin_filepath, in_file_size, in_bin_header);
+    TranslateAndRun(in_bin_filepath, in_file_size, in_bin_header, Build, Get);
 
     printf("Successfully end JIT compilation and execution\n");
 }
