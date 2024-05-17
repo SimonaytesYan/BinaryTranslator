@@ -109,6 +109,8 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     NullifyReg(&ctx, x86_RCX);                             //Nullify all user registers
     NullifyReg(&ctx, x86_RDX);                             //
 
+    printf("size for start = %zu\n", ctx.out_ip);
+
     Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram, build_cell_func, get_cell_func);
 
     printf("Running\n");
@@ -222,6 +224,8 @@ int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, Buil
     }
     in_command_out_command_match[ctx.in_ip] = &out_code[ctx.out_ip];
     EmitHlt(&ctx);     //end of program
+
+    printf("At the end = %zu\n", ctx.out_ip);
     //==================================================================
     
     //==========================SECOND PASS==============================
