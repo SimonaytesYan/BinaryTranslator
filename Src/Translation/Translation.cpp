@@ -54,6 +54,7 @@ void  EmitReturn(Context* ctx);
 void  EmitSqrt(Context* ctx);
 void  EmitGetCell(Context* ctx);
 void  EmitBuildCell(Context* ctx);
+void  EmitLoadResources(Context* ctx);
 
 x86_REGISTERS ConvertMyRegInx86Reg(REGISTERS reg);
 x86_COMMANDS  ConditionalJmpConversion(COMMANDS command);
