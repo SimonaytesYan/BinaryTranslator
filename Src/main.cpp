@@ -22,6 +22,13 @@ long long Get(long long x, long long y)
     return 10;
 }
 
+void LoadRes (long long food, long long water, 
+              long long wood, long long population, 
+              long long free_population, long long stone)
+{
+    printf("LoadRes()\n");
+}
+
 int main(int argc, char* argv[])
 {
     char in_bin_filepath[kMaxFilepathSize + 1] = {};
@@ -35,7 +42,7 @@ int main(int argc, char* argv[])
 
     size_t in_file_size = GetFileSize(in_bin_filepath);
 
-    TranslateAndRun(in_bin_filepath, in_file_size, in_bin_header, Build, Get);
+    TranslateAndRun(in_bin_filepath, in_file_size, in_bin_header, Build, Get, LoadRes);
 
     printf("Successfully end JIT compilation and execution\n");
 }

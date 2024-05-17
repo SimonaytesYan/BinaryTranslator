@@ -79,7 +79,7 @@ void          EmitCqo(Context* ctx);
 void          EmitCondJmpInstruction(Context* ctx, COMMANDS command, const int offset);
 
 double CalcAndPrintfStdDeviation(const double data[], const size_t number_meas);
-void   ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func);
+void   ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources_func);
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
@@ -102,7 +102,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     char* call_stack = (char*)mmap(NULL, CALL_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     Context ctx = {};
-    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func);
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func, load_resources_func);
 
     EmitMovAbsInReg(&ctx, (size_t)call_stack, x86_RSI);    //Put call stack pointer to rsi 
     EmitMovAbsInReg(&ctx, (size_t)ram,        x86_RDI);    //Put ram pointer to rdi
