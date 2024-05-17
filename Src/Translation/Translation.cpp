@@ -15,7 +15,7 @@
 const size_t kTestNumber = 1;
 const size_t kRunsInTest = 1;
 
-const size_t kMemoryMapSize = 4096 * 128;
+const size_t kMemoryMapSize = 1024 * 512;
 
 // #define DEBUG
 // #define GET_TIME
@@ -487,10 +487,14 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
 
         case CMD_BUILD_CELL:
         {
+            const size_t before_emission = ctx->out_ip;
             assert(ctx->build_cell_func != nullptr);
 
             ctx->in_ip++;
             EmitBuildCell(ctx);
+
+            const size_t after_emission = ctx->out_ip;
+            printf("after_emission - before_emission = %zu\n", after_emission - before_emission);
             break;
         }
         case CMD_GET_CELL:
