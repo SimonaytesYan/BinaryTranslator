@@ -81,7 +81,7 @@ enum x86_REGISTERS
 
 typedef void      (*BuildCell)     (long long CellType, long long x, long long y);
 typedef long long (*GetCell)       (long long x, long long y);
-typedef long long (*LoadResources) (long long food, long long water, 
+typedef void      (*LoadResources) (long long food, long long water, 
                                     long long wood, long long population, 
                                     long long free_population, long long stone);
 

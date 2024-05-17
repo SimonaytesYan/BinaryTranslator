@@ -601,8 +601,8 @@ void EmitLoadResources(Context* ctx)
     EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // 
     EmitMoveRegToReg(ctx, x86_RDX, x86_R10); //
 
-    EmitMovAbsInReg(ctx, (size_t)ctx->build_cell_func, x86_RAX); //
-    EmitCallReg(ctx, x86_RAX);                                   // call load_resources_func
+    EmitMovAbsInReg(ctx, (size_t)ctx->load_resources, x86_RAX); //
+    EmitCallReg(ctx, x86_RAX);                                  // call load_resources_func
 
     EmitPopAllRegs(ctx);
 }
