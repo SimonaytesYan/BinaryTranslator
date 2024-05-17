@@ -26,6 +26,12 @@ void LoadRes (long long food, long long water,
               long long wood, long long population, 
               long long free_population, long long stone)
 {
+	printf("food 			= %lld\n", food);
+	printf("water			= %lld\n", water);
+	printf("wood 			= %lld\n", wood);
+	printf("population 		= %lld\n", population);
+	printf("free_population = %lld\n", free_population);
+	printf("stone 			= %lld\n", stone);
     printf("LoadRes()\n");
 }
 

@@ -597,11 +597,11 @@ void EmitLoadResources(Context* ctx)
     EmitPushAllRegs(ctx);
 
     EmitMoveRegToReg(ctx, x86_RDI, x86_R15); //
-    EmitMoveRegToReg(ctx, x86_RDI, x86_R14); //
-    EmitMoveRegToReg(ctx, x86_RDI, x86_R13); // Put argument in correct regs
-    EmitMoveRegToReg(ctx, x86_RDI, x86_R12); //
-    EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // 
-    EmitMoveRegToReg(ctx, x86_RDX, x86_R10); //
+    EmitMoveRegToReg(ctx, x86_RSI, x86_R14); //
+    EmitMoveRegToReg(ctx, x86_RDX, x86_R13); // Put argument in correct regs
+    EmitMoveRegToReg(ctx, x86_RCX, x86_R12); //
+    EmitMoveRegToReg(ctx, x86_R8, x86_R11);  // 
+    EmitMoveRegToReg(ctx, x86_R9, x86_R10);  //
 
     EmitMovAbsInReg(ctx, (size_t)ctx->load_resources, x86_RAX); //
     EmitCallReg(ctx, x86_RAX);                                  // call load_resources_func
