@@ -83,7 +83,7 @@ void   ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, siz
 
 //==========================================FUNCTION IMPLEMENTATION===========================================
 
-void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header, BuildCell build_cell_func, GetCell get_cell_func)
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header, BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources_func)
 {
     assert(in_bin_filepath);
 
@@ -114,7 +114,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
 
     printf("size for start = %zu\n", ctx.out_ip);
 
-    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram, build_cell_func, get_cell_func);
+    Translate((int*)((char*)in_code + sizeof(MyHeader)), &out_code[ctx.out_ip] , &in_bin_header, ram, build_cell_func, get_cell_func, load_resources_func);
 
     printf("Running\n");
 
