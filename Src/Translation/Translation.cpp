@@ -187,7 +187,7 @@ extern "C" void Run(char* out_code)
     return;
 }
 
-void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func)
+void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_t out_ip, char* ram, BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources_func)
 {
     assert(ctx);
 
@@ -199,14 +199,15 @@ void ContextCtor(Context* ctx, int* in_code, char* out_code, size_t in_ip, size_
 
     ctx->build_cell_func = build_cell_func;
     ctx->get_cell_func   = get_cell_func;
+    ctx->load_resources  = load_resources_func;
 }
 
-int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func)
+int Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources_func)
 {
     char** in_command_out_command_match = (char**)calloc(in_header->commands_number + 1, sizeof(char*));
 
     Context ctx  = {};
-    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func);
+    ContextCtor(&ctx, in_code, out_code, 0, 0, ram, build_cell_func, get_cell_func, load_resources_func);
 
     //==========================FIRST PASS==============================
     printf("First compilation...\n");
