@@ -87,7 +87,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     printf("Translating...\n");
     int in_bin_fd = open(in_bin_filepath, O_RDWR);
 
-    char* out_code   = (char*)mmap(NULL, kMemoryMapSize, 
+    char* out_code   = (char*)mmap(NULL, in_file_size * 39, 
                                    PROT_READ | PROT_WRITE | PROT_EXEC, 
                                    MAP_ANONYMOUS | MAP_PRIVATE, 
                                    -1, 0);
@@ -498,7 +498,6 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
             EmitBuildCell(ctx);
 
             const size_t after_emission = ctx->out_ip;
-            printf("after_emission - before_emission = %zu\n", after_emission - before_emission);
             break;
         }
         case CMD_GET_CELL:
