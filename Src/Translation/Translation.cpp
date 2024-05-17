@@ -87,7 +87,7 @@ void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader 
     printf("Translating...\n");
     int in_bin_fd = open(in_bin_filepath, O_RDWR);
 
-    char* out_code   = (char*)mmap(NULL, in_file_size * 39, 
+    char* out_code   = (char*)mmap(NULL, in_file_size * 39 + 100, 
                                    PROT_READ | PROT_WRITE | PROT_EXEC, 
                                    MAP_ANONYMOUS | MAP_PRIVATE, 
                                    -1, 0);
