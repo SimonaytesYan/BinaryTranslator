@@ -29,13 +29,15 @@ struct Context
 
     char* ram       = nullptr;
 
-    BuildCell build_cell_func;
-    GetCell   get_cell_func;
+    BuildCell     build_cell_func;
+    GetCell       get_cell_func;
+    LoadResources load_resources;
 };
 
 //==========================================FUNCTION PROTOTYPES===========================================
 
-           int   Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, BuildCell build_cell_func, GetCell get_cell_func);
+           int   Translate(int* in_code, char* out_code, MyHeader* in_header, char* ram, 
+                           BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources);
 extern "C" void  Run(char* out_code);
 
 void  EmitAddSub(Context* ctx, x86_COMMANDS command);
@@ -491,21 +493,28 @@ int CommandParse(COMMANDS cmd, Context* ctx, char** in_command_out_command_match
 
         case CMD_BUILD_CELL:
         {
-            const size_t before_emission = ctx->out_ip;
             assert(ctx->build_cell_func != nullptr);
 
             ctx->in_ip++;
             EmitBuildCell(ctx);
-
-            const size_t after_emission = ctx->out_ip;
             break;
         }
+
         case CMD_GET_CELL:
         {
             assert(ctx->get_cell_func != nullptr);
             
             ctx->in_ip++;
             EmitGetCell(ctx);
+            break;
+        }
+
+        case CMD_LOAD_RESOURCES:
+        {
+            assert(ctx->load_resources != nullptr);
+            
+            ctx->in_ip++;
+            EmitLoadResources(ctx);
             break;
         }
 
@@ -570,6 +579,30 @@ void EmitBuildCell(Context* ctx)
 
     EmitMovAbsInReg(ctx, (size_t)ctx->build_cell_func, x86_RAX); //
     EmitCallReg(ctx, x86_RAX);                                   // call build_cell_func
+
+    EmitPopAllRegs(ctx);
+}
+
+void EmitLoadResources(Context* ctx)
+{
+    EmitPushPopReg(ctx, x86_POP, x86_R10);  // food
+    EmitPushPopReg(ctx, x86_POP, x86_R11);  // water
+    EmitPushPopReg(ctx, x86_POP, x86_R12);  // wood
+    EmitPushPopReg(ctx, x86_POP, x86_R13);  // population
+    EmitPushPopReg(ctx, x86_POP, x86_R14);  // free_population
+    EmitPushPopReg(ctx, x86_POP, x86_R15);  // stone
+
+    EmitPushAllRegs(ctx);
+
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R15); //
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R14); //
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R13); // Put argument in correct regs
+    EmitMoveRegToReg(ctx, x86_RDI, x86_R12); //
+    EmitMoveRegToReg(ctx, x86_RSI, x86_R11); // 
+    EmitMoveRegToReg(ctx, x86_RDX, x86_R10); //
+
+    EmitMovAbsInReg(ctx, (size_t)ctx->build_cell_func, x86_RAX); //
+    EmitCallReg(ctx, x86_RAX);                                   // call load_resources_func
 
     EmitPopAllRegs(ctx);
 }

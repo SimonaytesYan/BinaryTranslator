@@ -79,11 +79,16 @@ enum x86_REGISTERS
     x86_R15 = 0b1111,       //System register
 };
 
-typedef void      (*BuildCell)(long long CellType, long long x, long long y);
-typedef long long (*GetCell)  (long long x, long long y);
+typedef void      (*BuildCell)     (long long CellType, long long x, long long y);
+typedef long long (*GetCell)       (long long x, long long y);
+typedef long long (*LoadResources) (long long food, long long water, 
+                                    long long wood, long long population, 
+                                    long long free_population, long long stone);
 
 //==========================================FUNCTION PROTOTYPES============================
 
-void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, MyHeader in_bin_header, BuildCell build_cell_func, GetCell get_cell_func);
+void TranslateAndRun(const char* in_bin_filepath, size_t in_file_size, 
+                     MyHeader in_bin_header, 
+                     BuildCell build_cell_func, GetCell get_cell_func, LoadResources load_resources_func);
 
 #endif
